@@ -720,15 +720,6 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
 
 int main()
 {
-	// TO BE REMOVED: c++11 feature test
-	std::unordered_set<int> first;
-	for (int i = 0; i < 20; i++) {
-		first.insert(i * i);
-	}
-
-	for (auto itr = first.begin(); itr != first.end(); itr++) {
-		std::cout << *itr <<  std::endl;
-	}
     PagedFileManager *pfm = PagedFileManager::instance(); // To test the functionality of the paged file manager
     RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); // To test the functionality of the record-based file manager
 
