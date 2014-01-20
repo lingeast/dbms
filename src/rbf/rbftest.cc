@@ -722,7 +722,7 @@ int main()
 {
     PagedFileManager *pfm = PagedFileManager::instance(); // To test the functionality of the paged file manager
     RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); // To test the functionality of the record-based file manager
-
+    cout << sizeof(1)<<endl;
     remove("test");
     remove("test_1");
     remove("test_2");
@@ -742,6 +742,6 @@ int main()
     vector<int> sizes;
     RBFTest_9(rbfm, rids, sizes);
     RBFTest_10(rbfm, rids, sizes);
-
+    cout << sizeof(1)<<endl;
     return 0;
 }
