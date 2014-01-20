@@ -47,7 +47,21 @@ public:
 		}
 		return dirPage.dir[i];
 	};
-	//TODO: add more function so that multiple dir page can be treated as a integrated one
+};
+
+class PageHandle {
+private:
+	int8_t data[4096];	// to buffer page date
+	int pagenum;	// may want to store the base address of this page in file
+public:
+	int getAddr(const RID& rid);	// return record address
+	int freeAddr(); // return writable free space head
+	int pageID() {return pagenum;}
+	void * dataBlock() const { return (void *) &data;};	// expose the data block, for read/write
+	RC insertRecord( void* data, unsigned int length, RID &rid);
+	RC readRecord( void* data, const RID& rid);
+
+
 };
 
 class FileHandle;
