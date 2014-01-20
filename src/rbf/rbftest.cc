@@ -720,6 +720,26 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
 
 int main()
 {
+	//Personal Test Begin
+	if (false) {
+		cout << sizeof(PageDirHandle) << "," << sizeof(pageDir) << endl;
+		FILE* file = fopen("lyd_test.txt", "w");
+		PageDirHandle pdh1(1);
+		pdh1.increPageNum();
+		fwrite(pdh1.dataBlock(), sizeof(pageDir), 1, file);
+		fseek(file, sizeof(pageDir), SEEK_SET);
+		pdh1.increPageNum();
+		fwrite(pdh1.dataBlock(), sizeof(pageDir), 1, file);
+		fclose(file);
+		file = fopen("lyd_test.txt", "r");
+		PageDirHandle pdh(0);
+		pdh.readNewDir(0, file);
+		pdh.readNewDir(sizeof(pageDir), file);
+		fclose(file);
+		return 0;
+	}
+	//Personal Test End
+
     PagedFileManager *pfm = PagedFileManager::instance(); // To test the functionality of the paged file manager
     RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); // To test the functionality of the record-based file manager
 
