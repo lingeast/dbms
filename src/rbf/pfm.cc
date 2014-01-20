@@ -175,10 +175,22 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
 RC FileHandle::appendPage(const void *data)
 {
 	PageDirHandle pdh(INIT_DIR_OFFSET, file);
-	while(pdh.pageNum() == PAGE_DIR_SIZE - 1)	// This directory is full
-		pdh.readNewDir(pdh.nextDir() * PAGE_DIR_SIZE, file);
+	while(pdh.pageNum() == PAGE_DIR_SIZE) {// This directory is full
+		if (pdh.nextDir() < 0) {
+			// next dir doesn't exists, create a new one
+			PageDirHandle newPdh(pdh.dirCnt() + 1);
+			// Write newly-created dir
+			int offset = newPdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE);
+			writeDirBlock(offset, newPdh);
+			pdh.setNextDir(offset);
 
-	int dirOffset = ftell(file) - sizeof(pageDir);	// Store directory for future update
+			// Write back old one
+			writeDirBlock(pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE), pdh);
+		}
+		pdh.readNewDir(pdh.nextDir(), file);
+	}
+
+	int dirOffset = ftell(file) - sizeof(pageDir);	// Store directory for future writeback
 	int i = 0;
 	while(i < pdh.pageNum() && pdh[i].address != -1)
 		++i;

@@ -431,8 +431,11 @@ int RBFTest_7(PagedFileManager *pfm)
     assert(rc == success);
 
     // Append 50 pages
+
     void *data = malloc(PAGE_SIZE);
-    for(unsigned j = 0; j < 50; j++)
+    // LYD CHANGE BEGIN
+    unsigned int lydPageNum = 1200;
+    for(unsigned j = 0; j < lydPageNum; j++)
     {
         for(unsigned i = 0; i < PAGE_SIZE; i++)
         {
@@ -441,24 +444,27 @@ int RBFTest_7(PagedFileManager *pfm)
         rc = fileHandle.appendPage(data);
         assert(rc == success);
     }
-    cout << "50 Pages have been successfully appended!" << endl;
+    cout << lydPageNum <<" Pages have been successfully appended!" << endl;
 
     // Get the number of pages
     unsigned count = fileHandle.getNumberOfPages();
-    assert(count == (unsigned)50);
+    assert(count == (unsigned)lydPageNum);
 
     // Read the 25th page and check integrity
     void *buffer = malloc(PAGE_SIZE);
-    rc = fileHandle.readPage(24, buffer);
+    int lydPage = 16;
+    rc = fileHandle.readPage(lydPage - 1, buffer);
     assert(rc == success);
 
     for(unsigned i = 0; i < PAGE_SIZE; i++)
     {
-        *((char *)data + i) = i % 25 + 32;
+        *((char *)data + i) = i % lydPage + 32;
     }
     rc = memcmp(buffer, data, PAGE_SIZE);
+
+    // LYD CHANGE END
     assert(rc == success);
-    cout << "The data in 25th page is correct!" << endl;
+    cout << "The data in "<< lydPage <<"th page is correct!" << endl;
 
     // Update the 25th page
     for(unsigned i = 0; i < PAGE_SIZE; i++)

@@ -38,6 +38,7 @@ public:
 	void* dataBlock() const {return (void *) &dirPage;};
 	int dirCnt() const {return dirPage.dircnt;};
 	int nextDir() const {return dirPage.next; };
+	void setNextDir(int nextOff) { if(nextOff > 0) dirPage.next = nextOff;}
 	int pageNum() const {return dirPage.pageNum; };
 	void increPageNum(int step = 1) { dirPage.pageNum += step; };
 	pageEntry& operator[](int i)  {
