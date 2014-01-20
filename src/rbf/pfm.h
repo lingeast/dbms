@@ -35,7 +35,7 @@ public:
 	PageDirHandle(unsigned int dirCnt);
 	PageDirHandle(size_t offset ,FILE* stream);
 	void readNewDir(size_t offset, FILE* stream);
-	void* dataBlock() {return (void*) &dirPage;};
+	void* dataBlock() const {return (void *) &dirPage;};
 	int dirCnt() const {return dirPage.dircnt;};
 	int nextDir() const {return dirPage.next; };
 	int pageNum() const {return dirPage.pageNum; };
@@ -75,9 +75,10 @@ class FileHandle
 {
 private:
 	FILE* file;
+	void readPageBlock(size_t offset, void* data);	// Read page from file[offset] to data
 	void writePageBlock(size_t offset, const void *data);	// Write page data to file[offset]
-	void writeDirBlock(size_t offset, PageDirHandle pdh); // Write dir data to file[offset]
-	void moveCursor(size_t offset);
+	void writeDirBlock(size_t offset, PageDirHandle pdh); // Write Directory info pdh to file[offset]
+	void moveCursor(size_t offset); 	// Call fseek(offset, file) to move cursor
 	int getAddr(PageNum pageNum);
 public:
     FileHandle();                                                    // Default constructor

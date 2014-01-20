@@ -111,11 +111,18 @@ void FileHandle::moveCursor(size_t offset) {	// Calling fseek to move file point
 		throw std::runtime_error("FileHandle: Move cursor failed.");
 }
 
+void FileHandle::readPageBlock(size_t offset, void* data) {
+	assert(file != NULL);
+	moveCursor(offset);
+	if (1 != fread(data, PAGE_SIZE, 1, file))
+		throw std::runtime_error("FileHandle: Read page block failed.");
+}
+
 void FileHandle::writePageBlock(size_t offset, const void *data) {
 	assert(file != NULL);
 	moveCursor(offset);
 	if(1 != fwrite(data, PAGE_SIZE, 1, file))
-		throw std::runtime_error("FileHandle: Write pageblock failed.");
+		throw std::runtime_error("FileHandle: Write page block failed.");
 }
 
 void FileHandle::writeDirBlock(size_t offset, PageDirHandle pdh) {
@@ -130,30 +137,38 @@ void FileHandle::writeDirBlock(size_t offset, PageDirHandle pdh) {
 int FileHandle::getAddr(PageNum pageNum) {
 	PageDirHandle pdh(INIT_DIR_OFFSET, file);
 	int pageIndex = pageNum;
-	while(true) {
-		if (pageIndex < PAGE_DIR_SIZE)
-			return pdh[pageIndex].address;
-		else {
-			if (pdh.nextDir() < 0) return -1;	// out of range
-			else {
-				pdh.readNewDir(pdh.nextDir(), file);
-				pageIndex -= PAGE_DIR_SIZE;
-			}
-		}
+	while(pageIndex >= PAGE_DIR_SIZE) {
+		pdh.readNewDir(pdh.nextDir(), file);
+		pageIndex -= PAGE_DIR_SIZE;
 	}
-	assert(false);	// Should never be here
-	return -1;
+	return pdh[pageIndex].address;
 }
 
 RC FileHandle::readPage(PageNum pageNum, void *data)
 {
-    return -1;
+	int offset = getAddr(pageNum);
+	if (offset < 0) return -1;
+	try {
+		readPageBlock(offset, data);
+	} catch (const std::runtime_error& error) {
+		return -1;
+	}
+	// Read Succeed
+	return 0;
 }
 
 
 RC FileHandle::writePage(PageNum pageNum, const void *data)
 {
-    return -1;
+	int offset = getAddr(pageNum);
+	if (offset < 0 ) return -1;
+	try {
+		writePageBlock(offset, data);
+	} catch (const std::runtime_error& error) {
+		return -1;
+	}
+	// Write Succeed
+	return 0;
 }
 
 
@@ -171,8 +186,8 @@ RC FileHandle::appendPage(const void *data)
 	// pdh[i] is empty
 	pdh.increPageNum();	// update PageNum
 	pdh[i].remain = PAGE_SIZE; //TODO: questionable behavior
-	pdh[i].address = pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE)
-			+ sizeof(pageDir) + PAGE_DIR_SIZE * i;
+	pdh[i].address = pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE)	//one dir + PAGE_DIR_SIZE pages
+			+ sizeof(pageDir) + PAGE_SIZE * i;
 
 
 	try {
