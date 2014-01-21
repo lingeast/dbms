@@ -18,6 +18,7 @@ struct pageEntry {
 };
 
 const int  PAGE_DIR_SIZE = 509;
+
 struct pageDir {	// Header page has the same page size 4096
 	uint64_t pageNum;
 	int64_t next;
@@ -27,43 +28,7 @@ struct pageDir {	// Header page has the same page size 4096
 
 const int INIT_DIR_OFFSET = 0;
 
-
-
-class PageHandle {
-private:
-	int8_t data[PAGE_SIZE];	// to buffer page date
-	int pagenum;	// may want to store the base address(or page ID) of this page in file
-public:
-	PageHandle(int offset, FILE* file); // Init page data from file
-	int getAddr(int slot) const;	// return record address
-	int freeAddr() const; // return writable free space head
-	int pageID() const {return pagenum;}
-	void * dataBlock() const { return (void *) &data;};	// expose the data block, for read/write
-	int insertRecord( void* data, unsigned int length);	// insert record, return slot ID
-	RC readRecord( void* data, int slot) const;	// read record to data given a slot ID
-
-};
-
 class FileHandle;
-
-
-class PagedFileManager
-{
-public:
-    static PagedFileManager* instance();                     // Access to the _pf_manager instance
-
-    RC createFile    (const char *fileName);                         // Create a new file
-    RC destroyFile   (const char *fileName);                         // Destroy a file
-    RC openFile      (const char *fileName, FileHandle &fileHandle); // Open a file
-    RC closeFile     (FileHandle &fileHandle);                       // Close a file
-
-protected:
-    PagedFileManager();                                   // Constructor
-    ~PagedFileManager();                                  // Destructor
-
-private:
-    static PagedFileManager *_pf_manager;
-};
 
 class PageDirHandle {
 	private:
@@ -85,7 +50,95 @@ class PageDirHandle {
 			}
 			return dirPage.dir[i];
 		};
+};
+
+struct recordEntry {
+	int32_t address;
+	int32_t length;
+};
+
+class PageHandle {
+	class RecordDirHandle {
+	private:
+		recordEntry* base;
+		uint32_t* size;
+		uint32_t* freeAddr;
+	public:
+		RecordDirHandle():base(NULL), size(0), freeAddr(0) {;};
+		RecordDirHandle(PageHandle ph);
+		int slotSize() const {return *size;};
+		int free() const {return *freeAddr;};
+		recordEntry& operator[] (int unsigned i) const {
+			if (i < 0 || i >= *size) {
+				throw std::out_of_range("RecordDirHandle::operator[]");
+			}
+			return *(base - i);
+		}
+
 	};
+
+private:
+	int8_t data[PAGE_SIZE];	// to buffer page date
+
+	/* may want to store the base address(or page ID) of this page in file
+	 * Example:
+	 * FileHandle.writePage(PageHandle.pageID(), PageHandle.dataBlock());
+	 */
+	int pageNum;
+	RecordDirHandle rdh;
+public:
+	/*  Init page data from file
+	 *  Example:
+	 *  PageHandle pg(pageNum, file);
+	 *  do read or write stuff
+	 *  then write back:
+	 *  FileHandle.writePage(PageHandle.pageID(), PageHandle.dataBlock());
+	 */
+	PageHandle(int pageID, FileHandle& fh);
+
+	/* Init empty page with a directory
+	 * Example:
+	 * PageHandle pg();
+	 * FileHandle.appendPage(pg.dataBlock());
+	 * then do some insert
+	 */
+	PageHandle();
+
+
+	RC loadPage(int pageID, FileHandle& fh);	// load another page
+	int getAddr(int slot) const { return rdh[slot].address;}	// return record address
+	int freeAddr() const {return rdh.free();}; // return writable free space head
+	int pageID() const {
+		if(pageNum < 0) throw new std::logic_error("Page ID unavailable for a newly-created page");
+		return pageNum;
+	}
+	void * dataBlock() const { return (void *) &data;};	// expose the data block, for read/write
+
+
+	unsigned insertRecord( void* data, unsigned int length);	// insert record, return slot ID
+	RC readRecord( void* data, int slot) const;	// read record to data given a slot ID
+};
+
+
+
+
+class PagedFileManager
+{
+public:
+    static PagedFileManager* instance();                     // Access to the _pf_manager instance
+
+    RC createFile    (const char *fileName);                         // Create a new file
+    RC destroyFile   (const char *fileName);                         // Destroy a file
+    RC openFile      (const char *fileName, FileHandle &fileHandle); // Open a file
+    RC closeFile     (FileHandle &fileHandle);                       // Close a file
+
+protected:
+    PagedFileManager();                                   // Constructor
+    ~PagedFileManager();                                  // Destructor
+
+private:
+    static PagedFileManager *_pf_manager;
+};
 
 class FileHandle
 {

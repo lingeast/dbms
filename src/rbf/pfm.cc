@@ -26,6 +26,49 @@ void PageDirHandle::readNewDir(size_t offset, FILE* stream) {
 	ret = fread(&dirPage, sizeof(dirPage), 1, stream);
 	assert(ret == 1);
 }
+
+PageHandle::RecordDirHandle::RecordDirHandle(PageHandle ph) {
+	uint32_t* dirReader = (uint32_t*) ph.dataBlock();
+	size =  dirReader + (PAGE_SIZE / sizeof(int32_t)) - 1;	// get the address of size
+	freeAddr = dirReader + (PAGE_SIZE / sizeof(int32_t)) - 2;	// get the address of freeAddr
+	int8_t const* baseReader = (int8_t *) ph.dataBlock();
+	base = ((recordEntry*) freeAddr) - 1;
+
+	/*
+	baseEnd = (recordEntry*) (baseReader + PAGE_SIZE
+			- (1 + 1) * sizeof(int32_t)	// memory to store size and free offset
+			- (*size) * sizeof(recordEntry));	// memory to store directory entry
+			*/
+}
+
+PageHandle::PageHandle(int pageID, FileHandle& fh) {
+	pageNum = pageID;
+	fh.readPage(pageNum, this->data);
+	rdh = RecordDirHandle(*this);
+}
+
+PageHandle::PageHandle():pageNum(-1) {
+	uint32_t* intReader = (uint32_t*) data;
+	intReader[(PAGE_SIZE / sizeof(int32_t)) - 1] = 0; // set size = 0
+	intReader[(PAGE_SIZE / sizeof(int32_t)) - 2] = 0; // set freeAddr = 0
+}
+
+RC PageHandle::loadPage(int pageID, FileHandle& fh) {
+	pageNum = pageID;
+	try {
+		fh.readPage(pageNum, this->data);
+		rdh = RecordDirHandle(*this);
+	} catch (const std::exception& e) {
+		std::cout<< e.what() << std::endl;
+		return -1;
+	}
+	return 0;
+}
+
+
+
+
+
 PagedFileManager* PagedFileManager::_pf_manager = 0;
 
 PagedFileManager* PagedFileManager::instance()
@@ -50,12 +93,12 @@ PagedFileManager::~PagedFileManager()
 RC PagedFileManager::createFile(const char *fileName)
 {
 	FILE* file;
-	file = fopen(fileName, "r");
+	file = fopen(fileName, "rb");
 	if (file != NULL) {
 		fclose(file);
 		return -1;
 	} else {
-		file = fopen(fileName, "w");
+		file = fopen(fileName, "wb");
 		if (file == NULL)
 			return -1;
 		else {
@@ -79,7 +122,7 @@ RC PagedFileManager::destroyFile(const char *fileName)
 RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 {
 	FILE* file;
-	file = fopen(fileName, "r+");
+	file = fopen(fileName, "r+b");
 
 	if (file == NULL)
 		return -1;
@@ -104,6 +147,9 @@ FileHandle::FileHandle() : file(NULL)
 
 FileHandle::~FileHandle()
 {
+	// Check if PagedFileManager forget to close the file
+	if (file != NULL)
+		fclose(file);
 }
 
 void FileHandle::moveCursor(size_t offset) {	// Calling fseek to move file pointer
@@ -151,7 +197,8 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
 	if (offset < 0) return -1;
 	try {
 		readPageBlock(offset, data);
-	} catch (const std::runtime_error& error) {
+	} catch (const std::exception& e) {
+		std::cout<< e.what() << std::endl;
 		return -1;
 	}
 	// Read Succeed
@@ -165,7 +212,8 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
 	if (offset < 0 ) return -1;
 	try {
 		writePageBlock(offset, data);
-	} catch (const std::runtime_error& error) {
+	} catch (const std::exception& e) {
+		std::cout<< e.what() << std::endl;
 		return -1;
 	}
 	// Write Succeed
@@ -180,13 +228,26 @@ RC FileHandle::appendPage(const void *data)
 		if (pdh.nextDir() < 0) {
 			// next dir doesn't exists, create a new one
 			PageDirHandle newPdh(pdh.dirCnt() + 1);
+
 			// Write newly-created dir
 			int offset = newPdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE);
-			writeDirBlock(offset, newPdh);
+			try {
+				writeDirBlock(offset, newPdh);
+			} catch (const std::exception& e) {
+						std::cout<< e.what() << std::endl;
+						return -1;
+			}
+
+			// Update nextDir field in old one
 			pdh.setNextDir(offset);
 
 			// Write back old one
-			writeDirBlock(pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE), pdh);
+			try {
+				writeDirBlock(pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE), pdh);
+			} catch (const std::exception& e) {
+				std::cout<< e.what() << std::endl;
+				return -1;
+			}
 		}
 		pdh.readNewDir(pdh.nextDir(), file);
 	}
@@ -202,16 +263,22 @@ RC FileHandle::appendPage(const void *data)
 	pdh[i].address = pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE)	//one dir + PAGE_DIR_SIZE pages
 			+ sizeof(pageDir) + PAGE_SIZE * i;
 
-
+	// Write page
 	try {
 		writePageBlock(pdh[i].address, data);
-	} catch (const std::runtime_error& error) {
-		//std::cerr << error << std::endl;
+	} catch (const std::exception& error) {
+		std::cerr << error.what() << std::endl;
 		return -1;
 	}
 
 	// If write page successfully, writeback directory
-	writeDirBlock(dirOffset, pdh);
+	try {
+		writeDirBlock(dirOffset, pdh);
+	} catch (const std::exception& e) {
+		std::cout<< e.what() << std::endl;
+		return -1;
+	}
+	// Succeed, return 0
 	return 0;
 }
 
