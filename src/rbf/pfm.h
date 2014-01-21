@@ -27,40 +27,20 @@ struct pageDir {	// Header page has the same page size 4096
 
 const int INIT_DIR_OFFSET = 0;
 
-class PageDirHandle {
-private:
-	pageDir dirPage;
-public:
-	PageDirHandle();
-	PageDirHandle(unsigned int dirCnt);
-	PageDirHandle(size_t offset ,FILE* stream);
-	void readNewDir(size_t offset, FILE* stream);
-	void* dataBlock() const {return (void *) &dirPage;};
-	int dirCnt() const {return dirPage.dircnt;};
-	int nextDir() const {return dirPage.next; };
-	void setNextDir(int nextOff) { if(nextOff > 0) dirPage.next = nextOff;}
-	int pageNum() const {return dirPage.pageNum; };
-	void increPageNum(int step = 1) { dirPage.pageNum += step; };
-	pageEntry& operator[](int i)  {
-		if (i < 0 || i >= dirPage.pageNum) {
-			throw std::out_of_range("PageDirHandle::operator[]");
-		}
-		return dirPage.dir[i];
-	};
-};
+
 
 class PageHandle {
 private:
-	int8_t data[4096];	// to buffer page date
-	int pagenum;	// may want to store the base address of this page in file
+	int8_t data[PAGE_SIZE];	// to buffer page date
+	int pagenum;	// may want to store the base address(or page ID) of this page in file
 public:
-	int getAddr(const RID& rid);	// return record address
-	int freeAddr(); // return writable free space head
-	int pageID() {return pagenum;}
+	PageHandle(int offset, FILE* file); // Init page data from file
+	int getAddr(int slot) const;	// return record address
+	int freeAddr() const; // return writable free space head
+	int pageID() const {return pagenum;}
 	void * dataBlock() const { return (void *) &data;};	// expose the data block, for read/write
-	RC insertRecord( void* data, unsigned int length, RID &rid);
-	RC readRecord( void* data, const RID& rid);
-
+	int insertRecord( void* data, unsigned int length);	// insert record, return slot ID
+	RC readRecord( void* data, int slot) const;	// read record to data given a slot ID
 
 };
 
@@ -85,9 +65,31 @@ private:
     static PagedFileManager *_pf_manager;
 };
 
+class PageDirHandle {
+	private:
+		pageDir dirPage;
+	public:
+		PageDirHandle();
+		PageDirHandle(unsigned int dirCnt);
+		PageDirHandle(size_t offset ,FILE* stream);
+		void readNewDir(size_t offset, FILE* stream);
+		void* dataBlock() const {return (void *) &dirPage;};
+		int dirCnt() const {return dirPage.dircnt;};
+		int nextDir() const {return dirPage.next; };
+		void setNextDir(int nextOff) { if(nextOff > 0) dirPage.next = nextOff;}
+		int pageNum() const {return dirPage.pageNum; };
+		void increPageNum(int step = 1) { dirPage.pageNum += step; };
+		pageEntry& operator[](int i)  {
+			if (i < 0 || i >= dirPage.pageNum) {
+				throw std::out_of_range("PageDirHandle::operator[]");
+			}
+			return dirPage.dir[i];
+		};
+	};
 
 class FileHandle
 {
+
 private:
 	FILE* file;
 	void readPageBlock(size_t offset, void* data);	// Read page from file[offset] to data

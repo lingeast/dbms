@@ -452,7 +452,7 @@ int RBFTest_7(PagedFileManager *pfm)
 
     // Read the 25th page and check integrity
     void *buffer = malloc(PAGE_SIZE);
-    int lydPage = 16;
+    int lydPage = 879;
     rc = fileHandle.readPage(lydPage - 1, buffer);
     assert(rc == success);
 
