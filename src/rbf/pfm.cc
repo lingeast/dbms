@@ -87,6 +87,8 @@ PagedFileManager::PagedFileManager()
 
 PagedFileManager::~PagedFileManager()
 {
+	if (_pf_manager)
+		delete _pf_manager;
 }
 
 
@@ -252,7 +254,8 @@ RC FileHandle::appendPage(const void *data)
 		pdh.readNewDir(pdh.nextDir(), file);
 	}
 
-	int dirOffset = ftell(file) - sizeof(pageDir);	// Store directory for future writeback
+	int dirOffset = pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE); // Store directory for future writeback
+			//ftell(file) - sizeof(pageDir); Stop using ftell beacuse FILE* file may be moved by other FileHandle
 	int i = 0;
 	while(i < pdh.pageNum() && pdh[i].address != -1)
 		++i;

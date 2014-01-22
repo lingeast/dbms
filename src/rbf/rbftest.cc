@@ -729,19 +729,43 @@ int main()
 	//Personal Test Begin
 	if (false) {
 		cout << sizeof(PageDirHandle) << "," << sizeof(pageDir) << endl;
-		FILE* file = fopen("lyd_test.txt", "w");
+		char w1[] = "file1";
+		char w2[] = "22222";
+		char buffer[10] = "aaaaaaaaa";
+		FILE* file1 = fopen("test.txt", "r+b");
+		assert(file1 != NULL);
+		FILE* file2 = fopen("test.txt", "r+b");
+		assert(file2 != NULL);
+
+		puts(buffer);
+		fseek(file2, 6, SEEK_SET);
+		assert(1 == fwrite(w2, sizeof(w2) - 1, 1, file2));
+		fclose(file2);
+
+		int ret = fread(buffer, sizeof(char), 9, file1);
+		assert(ret == 9);
+		for (int i = 0; i < 10 ;i++) {
+			if (buffer[i] == '\0') continue;
+			std::cout << i << ":" << buffer[i] << ",";
+		}
+
+		fseek(file1, 0, SEEK_SET);
+		assert(1 == fwrite(w1, sizeof(w1) - 1, 1, file1));
+		fclose(file1);
+
+		return 0;
 		PageDirHandle pdh1(1);
 		pdh1.increPageNum();
-		fwrite(pdh1.dataBlock(), sizeof(pageDir), 1, file);
-		fseek(file, sizeof(pageDir), SEEK_SET);
+		fwrite(pdh1.dataBlock(), sizeof(pageDir), 1, file1);
+		fseek(file1, sizeof(pageDir), SEEK_SET);
 		pdh1.increPageNum();
-		fwrite(pdh1.dataBlock(), sizeof(pageDir), 1, file);
-		fclose(file);
-		file = fopen("lyd_test.txt", "r");
+		fwrite(pdh1.dataBlock(), sizeof(pageDir), 1, file1);
+		fclose(file1);
+		file1 = fopen("lyd_test.txt", "r");
 		PageDirHandle pdh(0);
-		pdh.readNewDir(0, file);
-		pdh.readNewDir(sizeof(pageDir), file);
-		fclose(file);
+		pdh.readNewDir(0, file1);
+		pdh.readNewDir(sizeof(pageDir), file1);
+		fclose(file1);
 		return 0;
 	}
 	//Personal Test End
