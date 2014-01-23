@@ -65,6 +65,30 @@ RC PageHandle::loadPage(int pageID, FileHandle& fh) {
 	return 0;
 }
 
+int PageHandle::insertRecord(const void* data, unsigned int length){
+	for(int i=0;i<recordnum;i++){
+		if ((recordlist[i].length>=length)&&(recordlist[i].occupy==-1)){
+			memcpy(((int8_t*)data)+recordlist[i].address,data,length);
+			recordlist[i].occupy=1;
+			return i;
+		}
+	}
+	recordnum++;
+	recordEntry newEntry;
+	if (recordnum==1){
+		newEntry.address=0;
+		newEntry.length = length;
+		newEntry.occupy =1;
+	}else{
+		newEntry.address=recordlist[recordnum-2].address+recordlist[recordnum-2].length;
+		newEntry.length = length;
+		newEntry.occupy = 1;
+	}
+	recordlist.push_back(newEntry);
+	memcpy(((int8_t*)data)+recordlist[recordnum-1].address,data,length);
+	return recordnum;
+}
+
 
 
 
@@ -129,6 +153,20 @@ RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 	if (file == NULL)
 		return -1;
 
+	int fileNo = fileno(file);
+	assert(fileNo != -1);
+	std::map<int, fileInfo>::iterator it = fileMap.find(fileNo);
+	if (it == fileMap.end()) {	// open a new file
+		fileInfo fi;
+		fi.stream = file;
+		fi.count = 1;
+		fileMap.insert(std::pair<int, fileInfo> (fileNo, fi));
+	} else {	// the file opened is already opened by another FileHandle
+		it->second.count++;	// incre ref count
+		fclose(file);	// close the file stream we don't use
+		file = it->second.stream;
+	}
+
 	fileHandle.setFile(file);
 	return 0;
 }
@@ -136,7 +174,19 @@ RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 
 RC PagedFileManager::closeFile(FileHandle &fileHandle)
 {
-	int ret =  fclose(fileHandle.getFile());
+	int fileNo = fileno(fileHandle.getFile());
+	assert(fileNo != -1);
+
+	int ret = 0;
+	std::map<int, fileInfo>::iterator it = fileMap.find(fileNo);
+	if (it == fileMap.end()) {
+		throw new std::logic_error("The fileHandle to be closed is not opened by PagedFileManager");
+	} else {
+		if (--it->second.count == 0) {	// No fileHandle is using this stream
+			ret = fclose(it->second.stream);
+			fileMap.erase(it);
+		}
+	}
 	fileHandle.setFile(NULL);
 	return ret;
 }
@@ -153,6 +203,30 @@ FileHandle::~FileHandle()
 	if (file != NULL)
 		fclose(file);
 }
+
+RID FileHandle::findfreePage(const void* data,const int length) const
+{
+	RID newRID;
+	unsigned pagenum = getNumberOfPages();
+	for(int i=1;i<=pagenum;i++){
+		if ((getPageRemain(i)>length+9)){
+					newRID.pageNum = i;
+					PageHandle targetPage(newRID.pageNum,*(this));
+					newRID.slotNum = targetPage.insertRecord(data,length);
+					void *newdata = targetPage.dataBlock();
+					writePage(newRID.pageNum,newdata);
+					return newRID;
+				}
+	}
+	//append a new page
+	newRID.pageNum = pagenum+1;
+	PageHandle newPage(pagenum+1);
+	newRID.slotNum = newPage.insertRecord(data,length);
+	void *newdata = newPage.dataBlock();
+	this->appendPage(newdata);
+	return newRID;
+}
+
 
 void FileHandle::moveCursor(size_t offset) {	// Calling fseek to move file pointer
 	assert (file != NULL);

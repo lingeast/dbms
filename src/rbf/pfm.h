@@ -4,12 +4,17 @@
 #include <stdint.h>
 #include <cstdio>
 #include <stdexcept>
+#include <map>
 
 typedef int RC;
 typedef unsigned PageNum;
 
 #define PAGE_SIZE 4096
 
+struct fileInfo {
+	FILE* stream;
+	unsigned int count;
+};
 
 // Self defined PagedFile and Page class
 struct pageEntry {
@@ -58,13 +63,16 @@ struct recordEntry {
 };
 
 class PageHandle {
+
 	class RecordDirHandle {
 	private:
 		recordEntry* base;
 		uint32_t* size;
 		uint32_t* freeAddr;
 	public:
+		// This constructor may not be used
 		RecordDirHandle():base(NULL), size(0), freeAddr(0) {;};
+		// Read Dir from Page
 		RecordDirHandle(PageHandle ph);
 		int slotSize() const {return *size;};
 		int free() const {return *freeAddr;};
@@ -138,6 +146,7 @@ protected:
 
 private:
     static PagedFileManager *_pf_manager;
+    std::map<int, fileInfo> fileMap;
 };
 
 class FileHandle

@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <stdio.h>
 
+#include <vector>
+
 #include "pfm.h"
 #include "rbfm.h"
 
