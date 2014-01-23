@@ -52,29 +52,6 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 		}
 		fileHandle.setNewremain(rid.pageNum,newremain);
 		return 0;
-	/*
-	 * //Transform raw record into variable length record format
-	 * DataBuffer buffer(recordDescriptor, data);
-	 * // Databuffer is a class that create & store record format data
-	 *
-	 *
-	 *	// Find a Page for insertion
-	 * rid.pageNum = fileHandle.findWritablePage();
-	 *
-	 *	// Read Page
-	 * PageHandle pg(pageNum, fileHandle);
-	 *	// Read Dir
-	 * PageDirHandle pdh(pageNum, fileHandle);
-	 *
-	 *	// Insert into page
-	 * rid.slotNum = pg.insertRecord(buffer.data(), buffer.length());
-	 *
-	 *	// Write back page
-	 * fileHandle.writePage(pg.pageID, pg.dataBlock());
-	 *	// Write back dir
-	 * fileHandle.writeDirBlock(dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE, pdh);
-	 *
-	 */
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
@@ -100,17 +77,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 	if (length == -1) return -1;
 	revertRecord(recordDescriptor,data,storedRecord);
 	free(storedRecord);
-	/*
-	 *	PageHandle pg(rid.pageNum, fileHandle);
-	 *
-	 *	char * buffer;
-	 *
-	 *	pg.readRecord(rid.slotNum, buffer);
-	 *
-	 *	TransformBack(buffer, data);
-	 *
-	 *	delete buffer;
-	 */
+
     return 0;
 }
 

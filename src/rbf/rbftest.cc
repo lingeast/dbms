@@ -2,17 +2,13 @@
 #include <string>
 #include <cassert>
 #include <sys/stat.h>
-#include <stdlib.h>
+#include <stdlib.h> 
 #include <string.h>
 #include <stdexcept>
-#include <stdio.h>
-
-#include <vector>
+#include <stdio.h> 
 
 #include "pfm.h"
 #include "rbfm.h"
-
-//#include <unordered_set>
 
 using namespace std;
 
@@ -32,28 +28,28 @@ bool FileExists(string fileName)
 void prepareRecord(const int nameLength, const string &name, const int age, const float height, const int salary, void *buffer, int *recordSize)
 {
     int offset = 0;
-
+    
     memcpy((char *)buffer + offset, &nameLength, sizeof(int));
-    offset += sizeof(int);
+    offset += sizeof(int);    
     memcpy((char *)buffer + offset, name.c_str(), nameLength);
     offset += nameLength;
-
+    
     memcpy((char *)buffer + offset, &age, sizeof(int));
     offset += sizeof(int);
-
+    
     memcpy((char *)buffer + offset, &height, sizeof(float));
     offset += sizeof(float);
-
+    
     memcpy((char *)buffer + offset, &salary, sizeof(int));
     offset += sizeof(int);
-
+    
     *recordSize = offset;
 }
 
 void prepareLargeRecord(const int index, void *buffer, int *size)
 {
     int offset = 0;
-
+    
     // compute the count
     int count = index % 50 + 1;
 
@@ -70,17 +66,17 @@ void prepareLargeRecord(const int index, void *buffer, int *size)
             memcpy((char *)buffer + offset, &text, 1);
             offset += 1;
         }
-
-        // compute the integer
+   
+        // compute the integer 
         memcpy((char *)buffer + offset, &index, sizeof(int));
         offset += sizeof(int);
-
+   
         // compute the floating number
-        float real = (float)(index + 1);
+        float real = (float)(index + 1); 
         memcpy((char *)buffer + offset, &real, sizeof(float));
         offset += sizeof(float);
     }
-    *size = offset;
+    *size = offset; 
 }
 
 void createRecordDescriptor(vector<Attribute> &recordDescriptor) {
@@ -274,7 +270,7 @@ int RBFTest_4(PagedFileManager *pfm)
     }
     rc = fileHandle.appendPage(data);
     assert(rc == success);
-
+   
     // Get the number of pages
     unsigned count = fileHandle.getNumberOfPages();
     assert(count == (unsigned)1);
@@ -311,8 +307,8 @@ int RBFTest_5(PagedFileManager *pfm)
     void *buffer = malloc(PAGE_SIZE);
     rc = fileHandle.readPage(0, buffer);
     assert(rc == success);
-
-    // Check the integrity of the page
+  
+    // Check the integrity of the page    
     void *data = malloc(PAGE_SIZE);
     for(unsigned i = 0; i < PAGE_SIZE; i++)
     {
@@ -320,7 +316,7 @@ int RBFTest_5(PagedFileManager *pfm)
     }
     rc = memcmp(data, buffer, PAGE_SIZE);
     assert(rc == success);
-
+ 
     // Close the file "test_1"
     rc = pfm->closeFile(fileHandle);
     assert(rc == success);
@@ -369,7 +365,7 @@ int RBFTest_6(PagedFileManager *pfm)
     // Check the integrity
     rc = memcmp(data, buffer, PAGE_SIZE);
     assert(rc == success);
-
+ 
     // Close the file "test_1"
     rc = pfm->closeFile(fileHandle);
     assert(rc == success);
@@ -380,7 +376,7 @@ int RBFTest_6(PagedFileManager *pfm)
     // Destroy File
     rc = pfm->destroyFile(fileName.c_str());
     assert(rc == success);
-
+    
     if(!FileExists(fileName.c_str()))
     {
         cout << "File " << fileName << " has been destroyed." << endl;
@@ -433,11 +429,8 @@ int RBFTest_7(PagedFileManager *pfm)
     assert(rc == success);
 
     // Append 50 pages
-
     void *data = malloc(PAGE_SIZE);
-    // LYD CHANGE BEGIN
-    unsigned int lydPageNum = 1200;
-    for(unsigned j = 0; j < lydPageNum; j++)
+    for(unsigned j = 0; j < 50; j++)
     {
         for(unsigned i = 0; i < PAGE_SIZE; i++)
         {
@@ -446,27 +439,24 @@ int RBFTest_7(PagedFileManager *pfm)
         rc = fileHandle.appendPage(data);
         assert(rc == success);
     }
-    cout << lydPageNum <<" Pages have been successfully appended!" << endl;
-
+    cout << "50 Pages have been successfully appended!" << endl;
+   
     // Get the number of pages
     unsigned count = fileHandle.getNumberOfPages();
-    assert(count == (unsigned)lydPageNum);
+    assert(count == (unsigned)50);
 
     // Read the 25th page and check integrity
     void *buffer = malloc(PAGE_SIZE);
-    int lydPage = 879;
-    rc = fileHandle.readPage(lydPage - 1, buffer);
+    rc = fileHandle.readPage(24, buffer);
     assert(rc == success);
 
     for(unsigned i = 0; i < PAGE_SIZE; i++)
     {
-        *((char *)data + i) = i % lydPage + 32;
+        *((char *)data + i) = i % 25 + 32;
     }
     rc = memcmp(buffer, data, PAGE_SIZE);
-
-    // LYD CHANGE END
     assert(rc == success);
-    cout << "The data in "<< lydPage <<"th page is correct!" << endl;
+    cout << "The data in 25th page is correct!" << endl;
 
     // Update the 25th page
     for(unsigned i = 0; i < PAGE_SIZE; i++)
@@ -479,7 +469,7 @@ int RBFTest_7(PagedFileManager *pfm)
     // Read the 25th page and check integrity
     rc = fileHandle.readPage(24, buffer);
     assert(rc == success);
-
+    
     rc = memcmp(buffer, data, PAGE_SIZE);
     assert(rc == success);
 
@@ -517,7 +507,7 @@ int RBFTest_8(RecordBasedFileManager *rbfm) {
     // 5. Close Record-Based File
     // 6. Destroy Record-Based File
     cout << "****In RBF Test Case 8****" << endl;
-
+   
     RC rc;
     string fileName = "test_3";
 
@@ -540,23 +530,24 @@ int RBFTest_8(RecordBasedFileManager *rbfm) {
     FileHandle fileHandle;
     rc = rbfm->openFile(fileName.c_str(), fileHandle);
     assert(rc == success);
-
-
-    RID rid;
+   
+      
+    RID rid; 
     int recordSize = 0;
     void *record = malloc(100);
     void *returnedData = malloc(100);
 
     vector<Attribute> recordDescriptor;
     createRecordDescriptor(recordDescriptor);
-
+    
     // Insert a record into a file
     prepareRecord(6, "Peters", 24, 170.1, 5000, record, &recordSize);
     cout << "Insert Data:" << endl;
     rbfm->printRecord(recordDescriptor, record);
+    
     rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
     assert(rc == success);
-
+    
     // Given the rid, read the record from file
     rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
     assert(rc == success);
@@ -572,7 +563,7 @@ int RBFTest_8(RecordBasedFileManager *rbfm) {
         free(returnedData);
         return -1;
     }
-
+    
     // Close the file "test_3"
     rc = rbfm->closeFile(fileHandle);
     assert(rc == success);
@@ -580,11 +571,11 @@ int RBFTest_8(RecordBasedFileManager *rbfm) {
     // Destroy File
     rc = rbfm->destroyFile(fileName.c_str());
     assert(rc == success);
-
+    
     free(record);
     free(returnedData);
     cout << "Test Case 8 Passed!" << endl << endl;
-
+    
     return 0;
 }
 
@@ -595,7 +586,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
     // 3. Insert Multiple Records
     // 4. Close Record-Based File
     cout << "****In RBF Test Case 9****" << endl;
-
+   
     RC rc;
     string fileName = "test_4";
 
@@ -620,20 +611,21 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
     assert(rc == success);
 
 
-    RID rid;
+    RID rid; 
     void *record = malloc(1000);
     int numRecords = 2000;
 
     vector<Attribute> recordDescriptor;
     createLargeRecordDescriptor(recordDescriptor);
+
     for(unsigned i = 0; i < recordDescriptor.size(); i++)
     {
         cout << "Attribute Name: " << recordDescriptor[i].name << endl;
         cout << "Attribute Type: " << (AttrType)recordDescriptor[i].type << endl;
         cout << "Attribute Length: " << recordDescriptor[i].length << endl << endl;
     }
+
     // Insert 2000 records into file
-    int totalsize = 0;
     for(int i = 0; i < numRecords; i++)
     {
         // Test insert Record
@@ -642,17 +634,16 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         prepareLargeRecord(i, record, &size);
 
         rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
-        totalsize += size;
         assert(rc == success);
+
         rids.push_back(rid);
-        sizes.push_back(size);
-        //rbfm->printRecord(recordDescriptor,record);
+        sizes.push_back(size);        
     }
     // Close the file "test_4"
     rc = rbfm->closeFile(fileHandle);
     assert(rc == success);
 
-    free(record);
+    free(record);    
     cout << "Test Case 9 Passed!" << endl << endl;
 
     return 0;
@@ -665,7 +656,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
     // 3. Close Record-Based File
     // 4. Destroy Record-Based File
     cout << "****In RBF Test Case 10****" << endl;
-
+   
     RC rc;
     string fileName = "test_4";
 
@@ -673,21 +664,21 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
     FileHandle fileHandle;
     rc = rbfm->openFile(fileName.c_str(), fileHandle);
     assert(rc == success);
-
+    
     int numRecords = 2000;
     void *record = malloc(1000);
     void *returnedData = malloc(1000);
 
     vector<Attribute> recordDescriptor;
     createLargeRecordDescriptor(recordDescriptor);
-
+    
     for(int i = 0; i < numRecords; i++)
     {
         memset(record, 0, 1000);
         memset(returnedData, 0, 1000);
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
         assert(rc == success);
-
+        
         cout << "Returned Data:" << endl;
         rbfm->printRecord(recordDescriptor, returnedData);
 
@@ -699,13 +690,13 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
             free(record);
             free(returnedData);
             return -1;
-        }else cout<<"success!"<<endl;
+        }
     }
-
+    
     // Close the file "test_4"
     rc = rbfm->closeFile(fileHandle);
     assert(rc == success);
-
+    
     rc = rbfm->destroyFile(fileName.c_str());
     assert(rc == success);
 
@@ -727,72 +718,28 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
 
 int main()
 {
-	//Personal Test Begin
-	if (false) {
-		cout << sizeof(PageDirHandle) << "," << sizeof(pageDir) << endl;
-		char w1[] = "file1";
-		char w2[] = "22222";
-		char buffer[10] = "aaaaaaaaa";
-		FILE* file1 = fopen("test.txt", "r+b");
-		assert(file1 != NULL);
-		FILE* file2 = fopen("test.txt", "r+b");
-		assert(file2 != NULL);
-
-		puts(buffer);
-		fseek(file2, 6, SEEK_SET);
-		assert(1 == fwrite(w2, sizeof(w2) - 1, 1, file2));
-		fclose(file2);
-
-		int ret = fread(buffer, sizeof(char), 9, file1);
-		assert(ret == 9);
-		for (int i = 0; i < 10 ;i++) {
-			if (buffer[i] == '\0') continue;
-			std::cout << i << ":" << buffer[i] << ",";
-		}
-
-		fseek(file1, 0, SEEK_SET);
-		assert(1 == fwrite(w1, sizeof(w1) - 1, 1, file1));
-		fclose(file1);
-
-		return 0;
-		PageDirHandle pdh1(1);
-		pdh1.increPageNum();
-		fwrite(pdh1.dataBlock(), sizeof(pageDir), 1, file1);
-		fseek(file1, sizeof(pageDir), SEEK_SET);
-		pdh1.increPageNum();
-		fwrite(pdh1.dataBlock(), sizeof(pageDir), 1, file1);
-		fclose(file1);
-		file1 = fopen("lyd_test.txt", "r");
-		PageDirHandle pdh(0);
-		pdh.readNewDir(0, file1);
-		pdh.readNewDir(sizeof(pageDir), file1);
-		fclose(file1);
-		return 0;
-	}
-	//Personal Test End
-
     PagedFileManager *pfm = PagedFileManager::instance(); // To test the functionality of the paged file manager
     RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); // To test the functionality of the record-based file manager
-    cout << sizeof(1)<<endl;
+    
     remove("test");
     remove("test_1");
     remove("test_2");
     remove("test_3");
     remove("test_4");
-
+    
     RBFTest_1(pfm);
-    RBFTest_2(pfm);
+    RBFTest_2(pfm); 
     RBFTest_3(pfm);
     RBFTest_4(pfm);
-    RBFTest_5(pfm);
+    RBFTest_5(pfm); 
     RBFTest_6(pfm);
     RBFTest_7(pfm);
     RBFTest_8(rbfm);
-
+    
     vector<RID> rids;
     vector<int> sizes;
     RBFTest_9(rbfm, rids, sizes);
     RBFTest_10(rbfm, rids, sizes);
-    cout << sizeof(1)<<endl;
+     
     return 0;
 }

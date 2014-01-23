@@ -4,7 +4,8 @@
 
 #include <string>
 #include <vector>
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include "../rbf/pfm.h"
 

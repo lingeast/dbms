@@ -1,6 +1,8 @@
 #include "pfm.h"
 #include <iostream>
 #include <cassert>
+#include <cstring>
+#include <cstdlib>
 
 PageDirHandle::PageDirHandle() {
 	PageDirHandle(0);
@@ -74,7 +76,7 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 		}
 	}
 
-	*rdh.slotSize() += 1;
+	(*rdh.slotSize())++;
 	rdh[*rdh.slotSize() - 1].address = *(rdh.free());
 	rdh[*rdh.slotSize() - 1].length = length;
 	rdh[*rdh.slotSize() - 1].occupy = 1;
