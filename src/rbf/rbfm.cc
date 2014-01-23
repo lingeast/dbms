@@ -36,9 +36,13 @@ RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
     return PagedFileManager::instance()->closeFile(fileHandle);
 }
 
-RC RecordBasedFileManager::insertRecord(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
-		void* newrecord = buildRecord(recordDescriptor,data);
-		rid = fileHandle.findfreePage(newrecord,sizeof(newrecord));
+RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
+		int length = 0;
+		void* newrecord = buildRecord(recordDescriptor, data, &length);
+		rid.pageNum = fileHandle.findfreePage(length);
+		PageHandle ph(rid.pageNum, fileHandle);
+		rid.slotNum = ph.insertRecord(newrecord,length);
+		fileHandle.writePage(rid.pageNum, ph.dataBlock());
 		return 0;
 	/*
 	 * //Transform raw record into variable length record format
@@ -85,34 +89,55 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
     return -1;
 }
 
-void* buildRecord(const vector<Attribute> &recordDescriptor,const void *data)
+void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescriptor,const void *data,int* recordlenth)
 {
 	int length = 0;
-	for (int i = 0 ; i < recordDescriptor.size() ; i++ )
-		length+=(recordDescriptor[i]).length;
-	void* newRecord=malloc(length+4*recordDescriptor.size()+4);
-    *((int32_t*)(newRecord)) = recordDescriptor.size();
-    int32_t offset = 4+4*recordDescriptor.size();
-	int32_t dataoffset = 0;
-	for (int i = 0 ; i < recordDescriptor.size() ; i++ )
-	{
-		*((int32_t*)(newRecord)+i+1) = offset;
-		void* newfield = ((char*)(newRecord)+offset);
-		void* datafield = ((char*)(data)+dataoffset);
+	for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
-				*((int32_t*)(newfield)) = *((int32_t*)(datafield));
+				length += sizeof(int);
 				break;
 			case 1:
-				*((float*)(newfield)) = *((float*)(datafield));
+				length += sizeof(float);
 				break;
 			case 2:
-				*((string*)(newfield)) = *((string*)(datafield));
+				int* stringlen = new int;
+				memcpy(stringlen,(char*)data + length,sizeof(int));
+				length += *stringlen;
+				free(stringlen);
 				break;
 		}
-		offset += (recordDescriptor[i]).length;
-		dataoffset += (recordDescriptor[i]).length;
 	}
+	void* newRecord = malloc(length + sizeof(int) + sizeof(int)*recordDescriptor.size());
+    *((int32_t*)(newRecord)) = recordDescriptor.size();
+    int32_t offset = sizeof(int) + sizeof(int)*recordDescriptor.size();
+    int32_t dataoffset = 0;
+	for (int i = 0 ; i < recordDescriptor.size() ; i++ )
+	{
+		*((int32_t*)(newRecord) + i + 1) = offset;
+		switch((recordDescriptor[i]).type)
+		{
+			case 0:
+				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset, sizeof(int));
+				offset += sizeof(int);
+				dataoffset += sizeof(int);
+				break;
+			case 1:
+				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset, sizeof(float));
+				offset += sizeof(float);
+				dataoffset += sizeof(float);
+				break;
+			case 2:
+				int *stringlen = new int;
+				memcpy(stringlen, (char*)(data) + dataoffset, sizeof(int));
+				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset + sizeof(int), *stringlen);
+				offset += *stringlen;
+				dataoffset += sizeof(int) + *stringlen;
+				free(stringlen);
+				break;
+		}
+	}
+	*recordlenth = offset;
 	return newRecord;
 }

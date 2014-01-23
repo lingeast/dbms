@@ -4,7 +4,8 @@
 
 #include <string>
 #include <vector>
-
+#include <stdlib.h>
+#include <iostream>
 #include "../rbf/pfm.h"
 
 using namespace std;
@@ -73,6 +74,9 @@ class RecordBasedFileManager
 public:
   static RecordBasedFileManager* instance();
 
+  void* buildRecord(const vector<Attribute> &recordDescriptor,const void *data,int* recordlenth);
+
+
   RC createFile(const string &fileName);
   
   RC destroyFile(const string &fileName);
@@ -86,7 +90,7 @@ public:
   //  2) For int and real: use 4 bytes to store the value;
   //     For varchar: use 4 bytes to store the length of characters, then store the actual characters.
   //  !!!The same format is used for updateRecord(), the returned data of readRecord(), and readAttribute()
-  RC insertRecord(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid);
+  RC insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid);
 
   RC readRecord(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data);
   
