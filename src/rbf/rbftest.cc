@@ -547,7 +547,7 @@ int RBFTest_8(RecordBasedFileManager *rbfm) {
     
     rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
     assert(rc == success);
-    
+
     // Given the rid, read the record from file
     rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
     assert(rc == success);
@@ -683,6 +683,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
         rbfm->printRecord(recordDescriptor, returnedData);
 
         int size = 0;
+        cout<<"pagenum"<<rids[i].pageNum<<endl;
         prepareLargeRecord(i, record, &size);
         if(memcmp(returnedData, record, sizes[i]) != 0)
         {

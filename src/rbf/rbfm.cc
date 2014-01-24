@@ -77,7 +77,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 		}
 	}
 	// find the approximate length of the record we stored
-	length += sizeof(int32_t) * (recordDescriptor.size() + 1);
+	length += sizeof(int16_t) * (recordDescriptor.size() + 1);
 	void* storedRecord = malloc(length);
 	length = ph.readRecord(rid.slotNum, storedRecord);
 	if (length == -1) return -1;
@@ -147,9 +147,9 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
 				break;
 		}
 	}
-	void* newRecord = malloc(length + sizeof(int32_t) + sizeof(int32_t) * recordDescriptor.size());
-    *((int32_t*)(newRecord)) = recordDescriptor.size();
-    int32_t offset = sizeof(int32_t) + sizeof(int32_t)*recordDescriptor.size();
+	void* newRecord = malloc(length + sizeof(int16_t) + sizeof(int16_t) * recordDescriptor.size());
+    *((int16_t*)(newRecord)) = recordDescriptor.size();
+    int16_t offset = sizeof(int16_t) + sizeof(int16_t)*recordDescriptor.size();
     dataoffset = 0;
     // change the format of the data to the record
 	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++)
@@ -175,7 +175,7 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
 				free(stringlen);
 				break;
 		}
-		*((int32_t*)(newRecord) + i + 1) = offset;
+		*((int16_t*)(newRecord) + i + 1) = offset;
 	}
 	*recordlenth = offset;
 	return newRecord;
@@ -183,7 +183,7 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
 
 void RecordBasedFileManager::revertRecord(const vector<Attribute> &recordDescriptor, void *data, void* inputdata){
 	int offset = 0;
-	int recordoffset = sizeof(int32_t) * (*(int*)inputdata + 1);
+	int recordoffset = sizeof(int16_t) * (*(int16_t*)inputdata + 1);
 	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++ ){
 		switch((recordDescriptor[i]).type)
 		{
@@ -199,8 +199,8 @@ void RecordBasedFileManager::revertRecord(const vector<Attribute> &recordDescrip
 				break;
 			case 2:
 				int strlen = 0;
-				if (i == 0) strlen = *((int*)inputdata + (i+1)) - sizeof(int32_t) * (*(int*)inputdata + 1);
-				else strlen = *((int*)inputdata + (i+1)) - *((int*)inputdata + i);
+				if (i == 0) strlen = *((int16_t*)inputdata + (i+1)) - sizeof(int16_t) * (*(int16_t*)inputdata + 1);
+				else strlen = *((int16_t*)inputdata + (i+1)) - *((int16_t*)inputdata + i);
 				memcpy((char*)data + offset, &strlen, sizeof(int32_t));
 				offset += sizeof(int32_t);
 				memcpy((char*)data + offset, (char*)inputdata + recordoffset, strlen);

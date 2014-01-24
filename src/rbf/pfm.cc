@@ -30,9 +30,9 @@ void PageDirHandle::readNewDir(size_t offset, FILE* stream) {
 }
 
 PageHandle::RecordDirHandle::RecordDirHandle(PageHandle & ph) {
-	uint32_t* dirReader = (uint32_t*)ph.data;
-	size =  dirReader + (PAGE_SIZE / sizeof(int32_t)) - 1;	// get the address of size
-	freeAddr = dirReader + (PAGE_SIZE / sizeof(int32_t)) - 2;	// get the address of freeAddr
+	uint16_t* dirReader = (uint16_t*)ph.data;
+	size =  dirReader + (PAGE_SIZE / sizeof(int16_t)) - 1;	// get the address of size
+	freeAddr = dirReader + (PAGE_SIZE / sizeof(int16_t)) - 2;	// get the address of freeAddr
 	//int8_t const* baseReader = (int8_t *) ph.dataBlock();
 	base = ((recordEntry*) freeAddr) - 1;
 
@@ -89,8 +89,8 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 int PageHandle::readRecord(const int slotnum, void* data){
 	if (rdh[slotnum].occupy != 1) return -1;
 	int offset = rdh[slotnum].address;
-	int fieldNum = *(int*)this->data;
-	int length = *(int*)(this->data + offset + sizeof(uint32_t) * fieldNum);
+	int fieldNum = *(int16_t*)this->data;
+	int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
 	memcpy(data, this->data + offset, length);
 	return length;
 }
@@ -213,7 +213,6 @@ int FileHandle::findfreePage(const int length)
 	while(num < pdh.pageNum()) {
 		if (pdh[num].remain > length + sizeof(recordEntry))
 		{
-			//std::cout<<"length: "<<length<<" remain: "<<pdh[num].remain<<std::endl;
 			return pageNum;
 		}
 		num ++; pageNum ++;

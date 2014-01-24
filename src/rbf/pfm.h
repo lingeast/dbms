@@ -58,8 +58,8 @@ class PageDirHandle {
 };
 
 struct recordEntry {
-	int32_t address;												// address for record
-	int32_t length;													// length for record
+	int16_t address;												// address for record
+	int16_t length;													// length for record
 	int8_t occupy;													// if this Entry is occupied ,-1 for not, 1 for occupy
 };
 
@@ -68,15 +68,15 @@ class PageHandle {
 	class RecordDirHandle {
 	private:
 		recordEntry* base;											// pointer to the recordEntry
-		uint32_t* size;												// pointer to the recordNumber in the page
-		uint32_t* freeAddr;											// pointer to the tail of the last reocrd in the page
+		uint16_t* size;												// pointer to the recordNumber in the page
+		uint16_t* freeAddr;											// pointer to the tail of the last reocrd in the page
 	public:
 		// This constructor may not be used
 		RecordDirHandle():base(NULL), size(0), freeAddr(0) {;};
 		// Read Dir from Page
 		RecordDirHandle(PageHandle &ph);
-		uint32_t* slotSize()  {return size;};
-		uint32_t* free()  {return freeAddr;};
+		uint16_t* slotSize()  {return size;};
+		uint16_t* free()  {return freeAddr;};
 		recordEntry& operator[] (int i) const {
 			if (i < 0 || i >= *size) {
 				throw std::out_of_range("RecordDirHandle::operator[]");
