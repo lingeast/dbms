@@ -626,15 +626,14 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
 
     vector<Attribute> recordDescriptor;
     createLargeRecordDescriptor(recordDescriptor);
-
     for(unsigned i = 0; i < recordDescriptor.size(); i++)
     {
         cout << "Attribute Name: " << recordDescriptor[i].name << endl;
         cout << "Attribute Type: " << (AttrType)recordDescriptor[i].type << endl;
         cout << "Attribute Length: " << recordDescriptor[i].length << endl << endl;
     }
-
     // Insert 2000 records into file
+    int totalsize = 0;
     for(int i = 0; i < numRecords; i++)
     {
         // Test insert Record
@@ -643,10 +642,11 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         prepareLargeRecord(i, record, &size);
 
         rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
+        totalsize += size;
         assert(rc == success);
-
         rids.push_back(rid);
         sizes.push_back(size);
+        //rbfm->printRecord(recordDescriptor,record);
     }
     // Close the file "test_4"
     rc = rbfm->closeFile(fileHandle);
@@ -699,7 +699,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
             free(record);
             free(returnedData);
             return -1;
-        }
+        }else cout<<"success!"<<endl;
     }
 
     // Close the file "test_4"

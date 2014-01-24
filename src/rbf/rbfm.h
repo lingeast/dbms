@@ -76,6 +76,7 @@ public:
 
   void* buildRecord(const vector<Attribute> &recordDescriptor,const void *data,int* recordlenth);
 
+  void revertRecord(const vector<Attribute> &recordDescriptor, void *data, void* inputdata);
 
   RC createFile(const string &fileName);
   
@@ -92,7 +93,7 @@ public:
   //  !!!The same format is used for updateRecord(), the returned data of readRecord(), and readAttribute()
   RC insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid);
 
-  RC readRecord(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data);
+  RC readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data);
   
   // This method will be mainly used for debugging/testing
   RC printRecord(const vector<Attribute> &recordDescriptor, const void *data);

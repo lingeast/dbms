@@ -74,9 +74,9 @@ class PageHandle {
 		// This constructor may not be used
 		RecordDirHandle():base(NULL), size(0), freeAddr(0) {;};
 		// Read Dir from Page
-		RecordDirHandle(PageHandle ph);
-		uint32_t& slotSize()  {return *size;};
-		uint32_t& free()  {return *freeAddr;};
+		RecordDirHandle(PageHandle &ph);
+		uint32_t* slotSize()  {return size;};
+		uint32_t* free()  {return freeAddr;};
 		recordEntry& operator[] (int unsigned i) const {
 			if (i < 0 || i >= *size) {
 				throw std::out_of_range("RecordDirHandle::operator[]");
@@ -120,11 +120,9 @@ public:
 		if(pageNum < 0) throw new std::logic_error("Page ID unavailable for a newly-created page");
 		return pageNum;
 	}
-	void * dataBlock() const { return (void *) &data;};	// expose the data block, for read/write
-
-
-	unsigned insertRecord(const void* data, unsigned int length);	// insert record, return slot ID
-	RC readRecord( void* data, int slot) const;	// read record to data given a slot ID
+	void * dataBlock() const { return (void *) data;};	// expose the data block, for read/write
+	int readRecord(const int slotnum, void* data);	// read record with given slotnum
+	unsigned insertRecord(const void* data, unsigned int length, int* newremain);	// insert record, return slot ID
 };
 
 
@@ -170,6 +168,7 @@ public:
     RC writePage(PageNum pageNum, const void *data);                    // Write a specific page
     RC appendPage(const void *data);                                    // Append a specific page
     unsigned getNumberOfPages();                                        // Get the number of pages in the file
+    RC setNewremain(PageNum pageNum, int newremain);
     int findfreePage(const int length);
 };
 

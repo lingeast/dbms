@@ -27,8 +27,8 @@ void PageDirHandle::readNewDir(size_t offset, FILE* stream) {
 	assert(ret == 1);
 }
 
-PageHandle::RecordDirHandle::RecordDirHandle(PageHandle ph) {
-	uint32_t* dirReader = (uint32_t*) ph.dataBlock();
+PageHandle::RecordDirHandle::RecordDirHandle(PageHandle & ph) {
+	uint32_t* dirReader = (uint32_t*)ph.data;
 	size =  dirReader + (PAGE_SIZE / sizeof(int32_t)) - 1;	// get the address of size
 	freeAddr = dirReader + (PAGE_SIZE / sizeof(int32_t)) - 2;	// get the address of freeAddr
 	//int8_t const* baseReader = (int8_t *) ph.dataBlock();
@@ -65,26 +65,33 @@ RC PageHandle::loadPage(int pageID, FileHandle& fh) {
 	return 0;
 }
 
-unsigned PageHandle::insertRecord(const void* data, unsigned int length){
-	for(int i = 0;i < rdh.slotSize();i++){
-		if ((rdh[i].length >= length)&&(rdh[i].occupy == -1)){
-			memcpy(((int8_t*)data)+rdh[i].address,data,length);
+unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* newremain){
+	for(int i = 0; i < *rdh.slotSize(); i++){
+		if ((rdh[i].length >= length) && (rdh[i].occupy == -1)){
+			memcpy(((int8_t*)this->data)+rdh[i].address,data,length);
 			rdh[i].occupy = 1;
 			return i;
 		}
 	}
-	rdh.slotSize()++;
-	rdh[rdh.slotSize() - 1].address = rdh.free();
-	rdh[rdh.slotSize() - 1].length = length;
-	rdh[rdh.slotSize() - 1].occupy = 1;
-	rdh.free() += length;
-	memcpy(((int8_t*)data)+rdh[rdh.slotSize() - 1].address,data,length);
-	return rdh.slotSize() - 1;
+
+	*rdh.slotSize() += 1;
+	rdh[*rdh.slotSize() - 1].address = *(rdh.free());
+	rdh[*rdh.slotSize() - 1].length = length;
+	rdh[*rdh.slotSize() - 1].occupy = 1;
+	*rdh.free() += length;
+	memcpy(((char*)this->data)+rdh[*rdh.slotSize() - 1].address,data,length);
+	*newremain = PAGE_SIZE - *rdh.free() - 2 * sizeof(int) - sizeof(recordEntry) * (*rdh.slotSize());
+	return *rdh.slotSize() - 1;
 }
 
-
-
-
+int PageHandle::readRecord(const int slotnum, void* data){
+	if (rdh[slotnum].occupy != 1) return -1;
+	int offset = rdh[slotnum].address;
+	int fieldNum = *(int*)this->data;
+	int length = *(int*)(this->data + offset + sizeof(uint32_t) * fieldNum);
+	memcpy(data, this->data + offset, length);
+	return length;
+}
 
 PagedFileManager* PagedFileManager::_pf_manager = 0;
 
@@ -203,12 +210,12 @@ int FileHandle::findfreePage(const int length)
 	int num = 0,pageNum = 0;
 	while(num < pdh.pageNum()) {
 		if (pdh[num].remain>length+sizeof(recordEntry))
-			pdh[num].remain-=length+sizeof(recordEntry);
-			writeDirBlock(pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE), pdh);
+		{
+			//std::cout<<"length: "<<length<<" remain: "<<pdh[num].remain<<std::endl;
 			return pageNum;
-		num ++;
+		}
+		num ++; pageNum ++;
 		if (num >= PAGE_DIR_SIZE){
-			pageNum += num;
 			int nextDir = pdh.nextDir();
 			if (nextDir < 0) break;
 			else pdh.readNewDir(nextDir, file);
@@ -219,7 +226,7 @@ int FileHandle::findfreePage(const int length)
 	void* newpage = malloc(PAGE_SIZE);
 	*((int*)newpage+PAGE_SIZE/sizeof(int)-1) = 0;
 	*((int*)newpage+PAGE_SIZE/sizeof(int)-2) = 0;
-	appendPage(newpage);
+	if (appendPage(newpage) != 0) return -1;
 	return pageNum;
 }
 
@@ -369,4 +376,9 @@ unsigned FileHandle::getNumberOfPages()
     return num;
 }
 
+RC FileHandle::setNewremain(PageNum pageNum, int newremain){
+	PageDirHandle pdh(pageNum/PAGE_DIR_SIZE*((sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE)),file);
+	pdh[pageNum%PAGE_DIR_SIZE].remain = newremain;
+	writeDirBlock(pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE), pdh);
+}
 
