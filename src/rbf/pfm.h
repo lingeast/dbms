@@ -49,8 +49,8 @@ class PageDirHandle {
 		void setNextDir(int nextOff) { if(nextOff > 0) dirPage.next = nextOff;}		// set the address of the next directory
 		int pageNum() const {return dirPage.pageNum; };				// return the page number in current directory
 		void increPageNum(int step = 1) { dirPage.pageNum += step; };	// increase the pageNum
-		pageEntry& operator[](int i)  {								// []operation overload
-			if (i < 0 || i >= dirPage.pageNum) {
+		pageEntry& operator[](unsigned int i)  {								// []operation overload
+			if (i >= dirPage.pageNum) {
 				throw std::out_of_range("PageDirHandle::operator[]");
 			}
 			return dirPage.dir[i];

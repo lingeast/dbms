@@ -44,8 +44,9 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 	int length = 0;
 	void* newrecord = buildRecord(recordDescriptor, data, &length);
 	// find page to insert the record
-	rid.pageNum = fileHandle.findfreePage(length);
-	if (rid.pageNum == -1) {free(newrecord);return -1;};
+	int pageNum = fileHandle.findfreePage(length);
+	if (pageNum == -1) {free(newrecord);return -1;};
+	rid.pageNum = pageNum;
 	int newremain = 0;
 	PageHandle ph(rid.pageNum, fileHandle);
 	// insertRecord to target page
@@ -99,13 +100,13 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 			case 0:
 				cout<<"Recordfield "<<i<<endl;
 				cout<<"FieldType: int"<<endl;
-				cout<<"FieldContext: "<<*(int*)((char*)data + dataoffset)<<endl;
+				cout<<"FieldContent: "<<*(int*)((char*)data + dataoffset)<<endl;
 				dataoffset += sizeof(int32_t);
 				break;
 			case 1:
 				cout<<"Recordfield: "<<i<<endl;
 				cout<<"FieldType: real"<<endl;
-				cout<<"FieldContext: "<<*(float*)((char*)data + dataoffset)<<endl;
+				cout<<"FieldContent: "<<*(float*)((char*)data + dataoffset)<<endl;
 				dataoffset += sizeof(float);
 				break;
 			case 2:
@@ -116,7 +117,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 				char* str = (char*)(malloc(sizeof(char)*(*stringlen + 1)));
 				memcpy(str,(char*)data + dataoffset + sizeof(int32_t),*stringlen);
 				dataoffset += *stringlen + sizeof(int32_t);
-				cout<<"FieldContext: "<<str<<endl;
+				cout<<"FieldContent: "<<str<<endl;
 				free(stringlen);
 				break;
 		}
