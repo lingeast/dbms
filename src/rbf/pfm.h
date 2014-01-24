@@ -63,6 +63,13 @@ struct recordEntry {
 	int8_t occupy;													// if this Entry is occupied ,-1 for not, 1 for occupy
 };
 
+/* clase PageHandle: An abstraction of page
+ * Page Format:
+ * |     slot 0   |  slot 1  | slot 2 | free space --------
+ * -------------------free space---------------------------
+ * -------------------free space---------------------------
+ * --|slotEntry2|slotEntry1|slotEntry0|free address|slotNum|
+ */
 class PageHandle {
 
 	class RecordDirHandle {

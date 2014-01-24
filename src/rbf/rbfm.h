@@ -74,9 +74,15 @@ class RecordBasedFileManager
 {
 public:
   static RecordBasedFileManager* instance();
-
+  // change format from the given data to self-designed variable length record format
+  /*
+   * record format example:
+   * | 3 | ptr1 | ptr2 | ptr3 | field1 | field2 | field3
+   * 	first field of variable-length record indicates the numbers of field in the record
+   *	each ptr store an offset value points the end of each field
+   */
   void* buildRecord(const vector<Attribute> &recordDescriptor,const void *data,int* recordlenth);
-  // change format from the given data to our designed record format
+
   void revertRecord(const vector<Attribute> &recordDescriptor, void *data, void* inputdata);
   // revert our record to the desired record format
   RC createFile(const string &fileName);
