@@ -51,13 +51,15 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 			return -1;
 		}
 		fileHandle.setNewremain(rid.pageNum,newremain);
-		return 0;
+
+		free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
+ 		return 0;
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
 	PageHandle ph(rid.pageNum,fileHandle);
 	int length = 0;
-	for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
+	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++ ){
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
@@ -83,7 +85,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {
 	int dataoffset = 0;
-	for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
+	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++ ){
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
@@ -112,7 +114,7 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
 {
 	int length = 0;
 	int dataoffset = 0;
-	for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
+	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++){
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
@@ -136,7 +138,7 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
     *((int32_t*)(newRecord)) = recordDescriptor.size();
     int32_t offset = sizeof(int) + sizeof(int)*recordDescriptor.size();
     dataoffset = 0;
-	for (int i = 0 ; i < recordDescriptor.size() ; i++ )
+	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++)
 	{
 		switch((recordDescriptor[i]).type)
 		{
@@ -170,7 +172,7 @@ void RecordBasedFileManager::revertRecord(const vector<Attribute> &recordDescrip
 	int offset = 0;
 	int recordoffset = sizeof(int) * (*(int*)inputdata + 1);
 	//cout<<"offset:"<<recordoffset<<endl;
-	for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
+	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++ ){
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:

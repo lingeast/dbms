@@ -68,7 +68,7 @@ RC PageHandle::loadPage(int pageID, FileHandle& fh) {
 }
 
 unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* newremain){
-	for(int i = 0; i < *rdh.slotSize(); i++){
+	for(unsigned i = 0; i < *rdh.slotSize(); i++){
 		if ((rdh[i].length >= length) && (rdh[i].occupy == -1)){
 			memcpy(((int8_t*)this->data)+rdh[i].address,data,length);
 			rdh[i].occupy = 1;
@@ -211,7 +211,7 @@ int FileHandle::findfreePage(const int length)
 	PageDirHandle pdh(INIT_DIR_OFFSET, file);
 	int num = 0,pageNum = 0;
 	while(num < pdh.pageNum()) {
-		if (pdh[num].remain>length+sizeof(recordEntry))
+		if (pdh[num].remain > length + sizeof(recordEntry))
 		{
 			//std::cout<<"length: "<<length<<" remain: "<<pdh[num].remain<<std::endl;
 			return pageNum;
@@ -380,7 +380,7 @@ unsigned FileHandle::getNumberOfPages()
 
 RC FileHandle::setNewremain(PageNum pageNum, int newremain){
 	PageDirHandle pdh(pageNum/PAGE_DIR_SIZE*((sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE)),file);
-	pdh[pageNum%PAGE_DIR_SIZE].remain = newremain;
+	pdh[pageNum % PAGE_DIR_SIZE].remain = newremain;
 	writeDirBlock(pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE), pdh);
 }
 
