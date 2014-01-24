@@ -76,9 +76,9 @@ public:
   static RecordBasedFileManager* instance();
 
   void* buildRecord(const vector<Attribute> &recordDescriptor,const void *data,int* recordlenth);
-
+  // change format from the given data to our designed record format
   void revertRecord(const vector<Attribute> &recordDescriptor, void *data, void* inputdata);
-
+  // revert our record to the desired record format
   RC createFile(const string &fileName);
   
   RC destroyFile(const string &fileName);

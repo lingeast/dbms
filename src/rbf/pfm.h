@@ -18,17 +18,17 @@ struct fileInfo {
 
 // Self defined PagedFile and Page class
 struct pageEntry {
-	int32_t address;	// Address for the beginning for a page
-	int32_t remain;		// The remaining free bytes at the end of the page
+	int32_t address;				// Address for the beginning for a page
+	int32_t remain;					// The remaining free bytes at the end of the page
 };//pageEntry for each page
 
 const int  PAGE_DIR_SIZE = 509;
 
-struct pageDir {	// Header page has the same page size 4096
-	uint64_t pageNum;    // The existing pages in the directory
-	int64_t next;		 //	The address for the next directory if not exist set to -1
-	int64_t dircnt;		 //	The directory number of this directory
-	pageEntry dir[PAGE_DIR_SIZE];	// pageEntries that contained in this directory
+struct pageDir {					// Header page has the same page size 4096
+	uint64_t pageNum;  			    // The existing pages in the directory
+	int64_t next;		 			//	The address for the next directory if not exist set to -1
+	int64_t dircnt;	     		    //	The directory number of this directory
+	pageEntry dir[PAGE_DIR_SIZE];	// one directory contains 509 pageEntries, so the size of directory is 4096
 };//page Directory containing the pageEntry for sequence pages.
 
 const int INIT_DIR_OFFSET = 0;
@@ -49,7 +49,7 @@ class PageDirHandle {
 		void setNextDir(int nextOff) { if(nextOff > 0) dirPage.next = nextOff;}		// set the address of the next directory
 		int pageNum() const {return dirPage.pageNum; };				// return the page number in current directory
 		void increPageNum(int step = 1) { dirPage.pageNum += step; };	// increase the pageNum
-		pageEntry& operator[](int i)  {
+		pageEntry& operator[](int i)  {								// []operation overload
 			if (i < 0 || i >= dirPage.pageNum) {
 				throw std::out_of_range("PageDirHandle::operator[]");
 			}
@@ -58,18 +58,18 @@ class PageDirHandle {
 };
 
 struct recordEntry {
-	int32_t address;
-	int32_t length;
-	int8_t occupy;
+	int32_t address;												// address for record
+	int32_t length;													// length for record
+	int8_t occupy;													// if this Entry is occupied ,-1 for not, 1 for occupy
 };
 
 class PageHandle {
 
 	class RecordDirHandle {
 	private:
-		recordEntry* base;
-		uint32_t* size;
-		uint32_t* freeAddr;
+		recordEntry* base;											// pointer to the recordEntry
+		uint32_t* size;												// pointer to the recordNumber in the page
+		uint32_t* freeAddr;											// pointer to the tail of the last reocrd in the page
 	public:
 		// This constructor may not be used
 		RecordDirHandle():base(NULL), size(0), freeAddr(0) {;};

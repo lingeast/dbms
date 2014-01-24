@@ -37,22 +37,26 @@ RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
 }
 
 RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
-		int length = 0;
-		void* newrecord = buildRecord(recordDescriptor, data, &length);
-		rid.pageNum = fileHandle.findfreePage(length);
-		if (rid.pageNum == -1) return -1;
-		int newremain = 0;
-		PageHandle ph(rid.pageNum, fileHandle);
-		rid.slotNum = ph.insertRecord(newrecord, length, &newremain);
-		free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
-		try{
+
+	int length = 0;
+	void* newrecord = buildRecord(recordDescriptor, data, &length);
+	// find page to insert the record
+	rid.pageNum = fileHandle.findfreePage(length);
+	if (rid.pageNum == -1) {free(newrecord);return -1;};
+	int newremain = 0;
+	PageHandle ph(rid.pageNum, fileHandle);
+	// insertRecord to target page
+	rid.slotNum = ph.insertRecord(newrecord, length, &newremain);
+	free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
+	try{
+		// write back page and page remaining info
 		fileHandle.writePage(rid.pageNum, ph.dataBlock());
 		fileHandle.setNewremain(rid.pageNum,newremain);
-		}catch(const std::exception &e){
-			std::cout<< e.what() << std::endl;
-			return -1;
-		}
-		return 0;
+	}catch(const std::exception &e){
+		std::cout<< e.what() << std::endl;
+		return -1;
+	}
+	return 0;
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
@@ -72,6 +76,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 				break;
 		}
 	}
+	// find the approximate length of the record we stored
 	length += sizeof(int32_t) * (recordDescriptor.size() + 1);
 	void* storedRecord = malloc(length);
 	length = ph.readRecord(rid.slotNum, storedRecord);
@@ -121,6 +126,7 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
 {
 	int length = 0;
 	int dataoffset = 0;
+	// calculate the length of the record we will insert
 	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++){
 		switch((recordDescriptor[i]).type)
 		{
@@ -145,6 +151,7 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
     *((int32_t*)(newRecord)) = recordDescriptor.size();
     int32_t offset = sizeof(int32_t) + sizeof(int32_t)*recordDescriptor.size();
     dataoffset = 0;
+    // change the format of the data to the record
 	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++)
 	{
 		switch((recordDescriptor[i]).type)
