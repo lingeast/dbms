@@ -43,17 +43,16 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 		if (rid.pageNum == -1) return -1;
 		int newremain = 0;
 		PageHandle ph(rid.pageNum, fileHandle);
-		rid.slotNum = ph.insertRecord(newrecord,length,&newremain);
+		rid.slotNum = ph.insertRecord(newrecord, length, &newremain);
+		free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
 		try{
 		fileHandle.writePage(rid.pageNum, ph.dataBlock());
+		fileHandle.setNewremain(rid.pageNum,newremain);
 		}catch(const std::exception &e){
 			std::cout<< e.what() << std::endl;
 			return -1;
 		}
-		fileHandle.setNewremain(rid.pageNum,newremain);
-
-		free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
- 		return 0;
+		return 0;
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
@@ -63,17 +62,17 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
-				length += sizeof(int);
+				length += recordDescriptor[i].length;
 				break;
 			case 1:
-				length += sizeof(float);
+				length += recordDescriptor[i].length;
 				break;
 			case 2:
 				length += recordDescriptor[i].length;
 				break;
 		}
 	}
-	length += sizeof(int) * (recordDescriptor.size()+1);
+	length += sizeof(int32_t) * (recordDescriptor.size() + 1);
 	void* storedRecord = malloc(length);
 	length = ph.readRecord(rid.slotNum, storedRecord);
 	if (length == -1) return -1;
@@ -85,27 +84,35 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {
 	int dataoffset = 0;
+	cout<<"============Print record============"<<endl;
 	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++ ){
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
-				cout<<*(int*)((char*)data+dataoffset)<<endl;
-				dataoffset += sizeof(int);
+				cout<<"Recordfield "<<i<<endl;
+				cout<<"FieldType: int"<<endl;
+				cout<<"FieldContext: "<<*(int*)((char*)data + dataoffset)<<endl;
+				dataoffset += sizeof(int32_t);
 				break;
 			case 1:
-				cout<<*(float*)((char*)data+dataoffset)<<endl;
+				cout<<"Recordfield: "<<i<<endl;
+				cout<<"FieldType: real"<<endl;
+				cout<<"FieldContext: "<<*(float*)((char*)data + dataoffset)<<endl;
 				dataoffset += sizeof(float);
 				break;
 			case 2:
+				cout<<"Recordfield "<<i<<endl;
+				cout<<"FieldType: string"<<endl;
 				int* stringlen = new int;
-				memcpy(stringlen,(char*)data + dataoffset, sizeof(int));
+				memcpy(stringlen,(char*)data + dataoffset, sizeof(int32_t));
 				char* str = (char*)(malloc(sizeof(char)*(*stringlen + 1)));
-				memcpy(str,(char*)data + dataoffset + sizeof(int),*stringlen);
-				dataoffset += *stringlen + sizeof(int);
-				cout<<str<<endl;
+				memcpy(str,(char*)data + dataoffset + sizeof(int32_t),*stringlen);
+				dataoffset += *stringlen + sizeof(int32_t);
+				cout<<"FieldContext: "<<str<<endl;
 				free(stringlen);
 				break;
 		}
+		cout<<endl;
 	}
 	return -1;
 }
@@ -118,79 +125,77 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
-				length += sizeof(int);
-				dataoffset += sizeof(int);
+				length += recordDescriptor[i].length;
+				dataoffset += recordDescriptor[i].length;
 				break;
 			case 1:
-				length += sizeof(float);
-				dataoffset += sizeof(float);
+				length += recordDescriptor[i].length;
+				dataoffset += recordDescriptor[i].length;
 				break;
 			case 2:
 				int* stringlen = new int;
-				memcpy(stringlen,(char*)data + dataoffset, sizeof(int));
+				memcpy(stringlen,(char*)data + dataoffset, sizeof(int32_t));
 				length += *stringlen;
-				dataoffset += *stringlen + sizeof(int);
+				dataoffset += *stringlen + sizeof(int32_t);
 				free(stringlen);
 				break;
 		}
 	}
-	void* newRecord = malloc(length + sizeof(int) + sizeof(int)*recordDescriptor.size());
+	void* newRecord = malloc(length + sizeof(int32_t) + sizeof(int32_t) * recordDescriptor.size());
     *((int32_t*)(newRecord)) = recordDescriptor.size();
-    int32_t offset = sizeof(int) + sizeof(int)*recordDescriptor.size();
+    int32_t offset = sizeof(int32_t) + sizeof(int32_t)*recordDescriptor.size();
     dataoffset = 0;
 	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++)
 	{
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
-				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset, sizeof(int));
-				offset += sizeof(int);
-				dataoffset += sizeof(int);
+				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset, recordDescriptor[i].length);
+				offset += sizeof(recordDescriptor[i].length);
+				dataoffset += sizeof(recordDescriptor[i].length);
 				break;
 			case 1:
-				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset, sizeof(float));
-				offset += sizeof(float);
-				dataoffset += sizeof(float);
+				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset, recordDescriptor[i].length);
+				offset += sizeof(recordDescriptor[i].length);
+				dataoffset += sizeof(recordDescriptor[i].length);
 				break;
 			case 2:
 				int *stringlen = new int;
-				memcpy(stringlen, (char*)(data) + dataoffset, sizeof(int));
-				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset + sizeof(int), *stringlen);
+				memcpy(stringlen, (char*)(data) + dataoffset, sizeof(int32_t));
+				memcpy((char*)(newRecord)+offset, (char*)(data) + dataoffset + sizeof(int32_t), *stringlen);
 				offset += *stringlen;
-				dataoffset += sizeof(int) + *stringlen;
+				dataoffset += sizeof(int32_t) + *stringlen;
 				free(stringlen);
 				break;
 		}
 		*((int32_t*)(newRecord) + i + 1) = offset;
 	}
-	//cout<<"testlen"<<*(int*)(((char*)newRecord + 30*4))<<endl;
 	*recordlenth = offset;
 	return newRecord;
 }
 
 void RecordBasedFileManager::revertRecord(const vector<Attribute> &recordDescriptor, void *data, void* inputdata){
 	int offset = 0;
-	int recordoffset = sizeof(int) * (*(int*)inputdata + 1);
-	//cout<<"offset:"<<recordoffset<<endl;
+	int recordoffset = sizeof(int32_t) * (*(int*)inputdata + 1);
 	for (unsigned int i = 0 ; i < recordDescriptor.size() ; i++ ){
 		switch((recordDescriptor[i]).type)
 		{
 			case 0:
-				memcpy((char*)data + offset,(char*)inputdata + recordoffset,sizeof(int));
-				offset += sizeof(int);
-				recordoffset += sizeof(int);
+				memcpy((char*)data + offset,(char*)inputdata + recordoffset, recordDescriptor[i].length);
+				offset += recordDescriptor[i].length;
+				recordoffset += recordDescriptor[i].length;
 				break;
 			case 1:
-				memcpy((char*)data + offset,(char*)inputdata + recordoffset,sizeof(float));
-				offset += sizeof(float);
-				recordoffset += sizeof(float);
+				memcpy((char*)data + offset,(char*)inputdata + recordoffset, recordDescriptor[i].length);
+				offset += recordDescriptor[i].length;
+				recordoffset += recordDescriptor[i].length;
 				break;
 			case 2:
 				int strlen = 0;
-				if (i == 0) strlen = *((int*)inputdata + (i+1)) - sizeof(int) * (*(int*)inputdata + 1);
+				if (i == 0) strlen = *((int*)inputdata + (i+1)) - sizeof(int32_t) * (*(int*)inputdata + 1);
 				else strlen = *((int*)inputdata + (i+1)) - *((int*)inputdata + i);
-				memcpy((char*)data + offset, &strlen, sizeof(int));
-				offset += sizeof(int);
+				memcpy((char*)data + offset, &strlen, sizeof(int32_t));
+				offset += sizeof(int32_t);
 				memcpy((char*)data + offset, (char*)inputdata + recordoffset, strlen);
 				offset += strlen;
 				recordoffset += strlen;

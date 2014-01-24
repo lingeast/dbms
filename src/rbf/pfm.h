@@ -18,18 +18,18 @@ struct fileInfo {
 
 // Self defined PagedFile and Page class
 struct pageEntry {
-	int32_t address;
-	int32_t remain;
-};
+	int32_t address;	// Address for the beginning for a page
+	int32_t remain;		// The remaining free bytes at the end of the page
+};//pageEntry for each page
 
 const int  PAGE_DIR_SIZE = 509;
 
 struct pageDir {	// Header page has the same page size 4096
-	uint64_t pageNum;
-	int64_t next;
-	int64_t dircnt;
-	pageEntry dir[PAGE_DIR_SIZE];
-};
+	uint64_t pageNum;    // The existing pages in the directory
+	int64_t next;		 //	The address for the next directory if not exist set to -1
+	int64_t dircnt;		 //	The directory number of this directory
+	pageEntry dir[PAGE_DIR_SIZE];	// pageEntries that contained in this directory
+};//page Directory containing the pageEntry for sequence pages.
 
 const int INIT_DIR_OFFSET = 0;
 
@@ -39,16 +39,16 @@ class PageDirHandle {
 	private:
 		pageDir dirPage;
 	public:
-		PageDirHandle();
-		PageDirHandle(unsigned int dirCnt);
-		PageDirHandle(size_t offset ,FILE* stream);
-		void readNewDir(size_t offset, FILE* stream);
-		void* dataBlock() const {return (void *) &dirPage;};
-		int dirCnt() const {return dirPage.dircnt;};
-		int nextDir() const {return dirPage.next; };
-		void setNextDir(int nextOff) { if(nextOff > 0) dirPage.next = nextOff;}
-		int pageNum() const {return dirPage.pageNum; };
-		void increPageNum(int step = 1) { dirPage.pageNum += step; };
+		PageDirHandle();											// empty construction
+		PageDirHandle(unsigned int dirCnt);							// construction with directory number,used to construct new directory
+		PageDirHandle(size_t offset ,FILE* stream);					// construction from file and directory address
+		void readNewDir(size_t offset, FILE* stream);				// read and update the dirPage with directory address
+		void* dataBlock() const {return (void *) &dirPage;};		// return the dirPage
+		int dirCnt() const {return dirPage.dircnt;};				// return the number of directory
+		int nextDir() const {return dirPage.next; };				// return the address for the next directory
+		void setNextDir(int nextOff) { if(nextOff > 0) dirPage.next = nextOff;}		// set the address of the next directory
+		int pageNum() const {return dirPage.pageNum; };				// return the page number in current directory
+		void increPageNum(int step = 1) { dirPage.pageNum += step; };	// increase the pageNum
 		pageEntry& operator[](int i)  {
 			if (i < 0 || i >= dirPage.pageNum) {
 				throw std::out_of_range("PageDirHandle::operator[]");
@@ -77,7 +77,7 @@ class PageHandle {
 		RecordDirHandle(PageHandle &ph);
 		uint32_t* slotSize()  {return size;};
 		uint32_t* free()  {return freeAddr;};
-		recordEntry& operator[] (int unsigned i) const {
+		recordEntry& operator[] (int i) const {
 			if (i < 0 || i >= *size) {
 				throw std::out_of_range("RecordDirHandle::operator[]");
 			}
@@ -156,7 +156,7 @@ private:
 	void writePageBlock(size_t offset, const void *data);	// Write page data to file[offset]
 	void writeDirBlock(size_t offset, PageDirHandle pdh); // Write Directory info pdh to file[offset]
 	void moveCursor(size_t offset); 	// Call fseek(offset, file) to move cursor
-	int getAddr(PageNum pageNum);
+	int getAddr(PageNum pageNum);		// Get the address of the beginnnig of the page with given page number
 public:
     FileHandle();                                                    // Default constructor
     ~FileHandle();                                                   // Destructor
@@ -168,8 +168,8 @@ public:
     RC writePage(PageNum pageNum, const void *data);                    // Write a specific page
     RC appendPage(const void *data);                                    // Append a specific page
     unsigned getNumberOfPages();                                        // Get the number of pages in the file
-    RC setNewremain(PageNum pageNum, int newremain);
-    int findfreePage(const int length);
+    RC setNewremain(PageNum pageNum, int newremain);					// Update the remain attribute in the page directory
+    int findfreePage(const int length);									// find a free page for inserting Record with given length
 };
 
  #endif

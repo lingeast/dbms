@@ -381,6 +381,12 @@ unsigned FileHandle::getNumberOfPages()
 RC FileHandle::setNewremain(PageNum pageNum, int newremain){
 	PageDirHandle pdh(pageNum/PAGE_DIR_SIZE*((sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE)),file);
 	pdh[pageNum % PAGE_DIR_SIZE].remain = newremain;
-	writeDirBlock(pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE), pdh);
+	try{
+		writeDirBlock(pdh.dirCnt() * (sizeof(pageDir) + PAGE_DIR_SIZE * PAGE_SIZE), pdh);
+	}catch (std::exception &e){
+		std::cout<<e.what()<<std::endl;
+		return -1;
+	}
+	return 0;
 }
 
