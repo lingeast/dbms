@@ -114,7 +114,8 @@ PagedFileManager::PagedFileManager()
 PagedFileManager::~PagedFileManager()
 {
 	if (_pf_manager)
-		delete _pf_manager;
+		delete _pf_manager;	//Questionable Operation?
+	_pf_manager = NULL;
 }
 
 
@@ -143,6 +144,13 @@ RC PagedFileManager::createFile(const char *fileName)
 
 RC PagedFileManager::destroyFile(const char *fileName)
 {
+	FILE* file = fopen(fileName, "r");
+	if (file == NULL) return -1;
+
+	std::map<int, fileInfo>::iterator it = fileMap.find(fileno(file));
+	if (it != fileMap.end()) {	// Destroy an opened file
+		return -1;
+	}
 	return remove(fileName);
 }
 
@@ -152,8 +160,12 @@ RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 	FILE* file;
 	file = fopen(fileName, "r+b");
 
-	if (file == NULL)
+	if (file == NULL)	// if file does not exist
 		return -1;
+
+	if (fileHandle.getFile() != NULL) {	// fileHandle already points to a file
+		return -1;
+	}
 
 	int fileNo = fileno(file);
 	assert(fileNo != -1);
@@ -169,6 +181,7 @@ RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 		file = it->second.stream;
 	}
 
+
 	fileHandle.setFile(file);
 	return 0;
 }
@@ -176,13 +189,15 @@ RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 
 RC PagedFileManager::closeFile(FileHandle &fileHandle)
 {
+	if (fileHandle.getFile() == NULL) return -1;
 	int fileNo = fileno(fileHandle.getFile());
 	assert(fileNo != -1);
 
 	int ret = 0;
 	std::map<int, fileInfo>::iterator it = fileMap.find(fileNo);
 	if (it == fileMap.end()) {
-		throw new std::logic_error("The fileHandle to be closed is not opened by PagedFileManager");
+		std::cout <<"The fileHandle to be closed is not opened by PagedFileManager";
+		return -1;
 	} else {
 		if (--it->second.count == 0) {	// No fileHandle is using this stream
 			ret = fclose(it->second.stream);
@@ -268,6 +283,7 @@ int FileHandle::getAddr(PageNum pageNum) {
 		pdh.readNewDir(pdh.nextDir(), file);
 		pageIndex -= PAGE_DIR_SIZE;
 	}
+	if (pdh.pageNum() <= pageIndex) return -1;
 	return pdh[pageIndex].address;
 }
 
