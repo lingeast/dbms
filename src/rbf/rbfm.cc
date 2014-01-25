@@ -151,7 +151,8 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
 		}
 	}
 	void* newRecord = malloc(length + sizeof(int16_t) + sizeof(int16_t) * recordDescriptor.size());
-    *((int16_t*)(newRecord)) = recordDescriptor.size();
+    // First int16_t integer in record represents the fields number;
+	*((int16_t*)(newRecord)) = recordDescriptor.size();
     int16_t offset = sizeof(int16_t) + sizeof(int16_t)*recordDescriptor.size();
     dataoffset = 0;
     // change the format of the data to the record
@@ -178,6 +179,7 @@ void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescrip
 				free(stringlen);
 				break;
 		}
+		// add an int16_t integer point to the tail byte of each field.
 		*((int16_t*)(newRecord) + i + 1) = offset;
 	}
 	*recordlenth = offset;
