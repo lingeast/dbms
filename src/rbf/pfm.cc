@@ -89,11 +89,71 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 int PageHandle::readRecord(const int slotnum, void* data){
 	if (rdh[slotnum].occupy != 1) return -1;
 	int offset = rdh[slotnum].address;
-	int fieldNum = *(int16_t*)this->data;
+	int fieldNum = *(int16_t*)(this->data + offset);
 	int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
 	memcpy(data, this->data + offset, length);
 	return length;
 }
+
+RC PageHandle::deleteRecord(int slot){
+	if ((*rdh.slotSize() < slot) || (rdh[slot].occupy == -1)){
+		return -1;
+	}
+	rdh[slot].occupy = -1;
+	return 0;
+}
+
+RC PageHandle::reorganizePage(){
+	int16_t ptr = 0, slotnum = 0;
+	void* newpage = malloc(PAGE_SIZE);
+	memcpy((int16_t*)newpage + PAGE_SIZE/sizeof(int16_t) - 1, rdh.slotSize(), sizeof(int16_t));
+	int slotptr = PAGE_SIZE/sizeof(int16_t) - 2 - sizeof(recordEntry);
+	while(*rdh.slotSize() > slotnum){
+		if (rdh[slotnum].occupy == 1)
+		{
+			int offset = rdh[slotnum].address;
+			int fieldNum = *(int16_t*)(this->data + offset);
+			int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
+			memcpy((char*)newpage + ptr, data + offset , length);
+			memcpy((char*)newpage + slotptr, data + slotptr, sizeof(recordEntry));
+			ptr += length;
+			slotptr -= sizeof(recordEntry);
+		}
+		// deleted record slot
+		if (rdh[slotnum].occupy == -1){
+			recordEntry rE = { 0, 0, -1};
+			memcpy((char*)newpage + slotptr, &rE, sizeof(recordEntry));
+			slotptr -= sizeof(recordEntry);
+		}
+		// record in other page
+		if (rdh[slotnum].occupy == 0){
+			memcpy((char*)newpage + slotptr, data + slotptr, sizeof(recordEntry));
+			slotptr -= sizeof(recordEntry);
+		}
+	}
+	memcpy((int16_t*)newpage + PAGE_SIZE/sizeof(int16_t) - 2, &ptr, sizeof(int16_t));
+	memcpy(data, newpage, PAGE_SIZE);
+	// return the newremain byte in the page
+	return (slotptr - ptr + sizeof(recordEntry));
+}
+
+RC PageHandle::updateRecord(int slot, const void* data, unsigned int length, int* newremain){
+	if ((*rdh.slotSize() < slot) || (rdh[slot].occupy != 1)){
+			return -1;
+	}
+	int offset = rdh[slot].address;
+	int fieldNum = *(int16_t*)(this->data + offset);
+	int recordLen = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
+	if (recordLen >= length){
+		memcpy(this->data + offset, data, length);
+		return 0;
+	}
+	if (recordLen < length){
+
+	}
+
+}
+
 
 PagedFileManager* PagedFileManager::_pf_manager = 0;
 
@@ -221,7 +281,7 @@ FileHandle::~FileHandle()
 		fclose(file);
 }
 
-int FileHandle::findfreePage(const int length)
+int FileHandle::findfreePage(const int length, int* remain)
 {
 	PageDirHandle pdh(INIT_DIR_OFFSET, file);
 	int num = 0,pageNum = 0;
@@ -240,8 +300,8 @@ int FileHandle::findfreePage(const int length)
 	}
 	// append a new page
 	void* newpage = malloc(PAGE_SIZE);
-	*((int*)newpage+PAGE_SIZE/sizeof(int)-1) = 0;
-	*((int*)newpage+PAGE_SIZE/sizeof(int)-2) = 0;
+	*((int16_t*)newpage+PAGE_SIZE/sizeof(int16_t)-1) = 0;
+	*((int16_t*)newpage+PAGE_SIZE/sizeof(int16_t)-2) = 0;
 	if (appendPage(newpage) != 0) return -1;
 	return pageNum;
 }

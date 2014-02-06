@@ -130,6 +130,9 @@ public:
 	void * dataBlock() const { return (void *) data;};	// expose the data block, for read/write
 	int readRecord(const int slotnum, void* data);	// read record with given slotnum
 	unsigned insertRecord(const void* data, unsigned int length, int* newremain);	// insert record, return slot ID
+	RC deleteRecord(int slot);
+	RC updateRecord(int slot, const void* data, unsigned int length, int* newremain);
+	RC reorganizePage();
 };
 
 
@@ -176,7 +179,7 @@ public:
     RC appendPage(const void *data);                                    // Append a specific page
     unsigned getNumberOfPages();                                        // Get the number of pages in the file
     RC setNewremain(PageNum pageNum, int newremain);					// Update the remain attribute in the page directory
-    int findfreePage(const int length);									// find a free page for inserting Record with given length
+    int findfreePage(const int length, int* remain);									// find a free page for inserting Record with given length
 };
 
  #endif

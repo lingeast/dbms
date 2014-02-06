@@ -110,16 +110,16 @@ public:
 IMPORTANT, PLEASE READ: All methods below this comment (other than the constructor and destructor) are NOT required to be implemented for part 1 of the project
 ***************************************************************************************************************************************************************
 ***************************************************************************************************************************************************************/
-  RC deleteRecords(const FileHandle &fileHandle);
+  RC deleteRecords(FileHandle &fileHandle);
 
-  RC deleteRecord(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid);
+  RC deleteRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid);
 
   // Assume the rid does not change after update
-  RC updateRecord(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, const RID &rid);
+  RC updateRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, const RID &rid);
 
   RC readAttribute(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, const string attributeName, void *data);
 
-  RC reorganizePage(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const unsigned pageNumber);
+  RC reorganizePage(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const unsigned pageNumber);
 
   // scan returns an iterator to allow the caller to go through the results one by one. 
   RC scan(const FileHandle &fileHandle,

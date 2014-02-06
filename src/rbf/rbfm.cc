@@ -44,10 +44,12 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 	int length = 0;
 	void* newrecord = buildRecord(recordDescriptor, data, &length);
 	// find page to insert the record
-	int pageNum = fileHandle.findfreePage(length);
+	int newremain = 0;
+	int pageNum = fileHandle.findfreePage(length, &newremain);
 	if (pageNum == -1) {free(newrecord);return -1;};
 	rid.pageNum = pageNum;
-	int newremain = 0;
+	rid.pageNum = fileHandle.findfreePage(length, &newremain);
+	if (rid.pageNum == -1) {free(newrecord);return -1;};
 	PageHandle ph(rid.pageNum, fileHandle);
 	// insertRecord to target page
 	rid.slotNum = ph.insertRecord(newrecord, length, &newremain);
@@ -125,6 +127,35 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 	}
 	return -1;
 }
+
+RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid){
+	PageHandle ph(rid.pageNum,fileHandle);
+	return ph.deleteRecord(rid.slotNum);
+
+}
+
+RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, const RID &rid){
+	int length = 0;
+	void* newrecord = buildRecord(recordDescriptor, data, &length);
+	PageHandle ph(rid.pageNum,fileHandle);
+
+
+}
+
+RC RecordBasedFileManager::reorganizePage(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const unsigned pageNumber){
+	PageHandle ph(pageNumber,fileHandle);
+	int32_t newremain = 0;
+	newremain = ph.reorganizePage();
+	try{
+		// write back page and page remaining info
+			fileHandle.writePage(pageNumber, ph.dataBlock());
+	}catch(const std::exception &e){
+		std::cout<< e.what() << std::endl;
+		return -1;
+	}
+	return 0;
+}
+
 
 void* RecordBasedFileManager::buildRecord(const vector<Attribute> &recordDescriptor,const void *data,int* recordlenth)
 {
