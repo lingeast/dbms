@@ -69,7 +69,7 @@ RC PageHandle::loadPage(int pageID, FileHandle& fh) {
 
 unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* newremain){
 	for(unsigned i = 0; i < *rdh.slotSize(); i++){
-		if ((rdh[i].length >= length) && (rdh[i].occupy == -1)){
+		if ((rdh[i].length >= length) && (rdh[i].occupy == IFINPAGE::Delete)){
 			memcpy(((int8_t*)this->data)+rdh[i].address,data,length);
 			rdh[i].occupy = 1;
 			return i;
@@ -289,6 +289,7 @@ int FileHandle::findfreePage(const int length, int* remain)
 	while(num < pdh.pageNum()) {
 		if (pdh[num].remain > length + sizeof(recordEntry))
 		{
+			*remain = pdh[num].remain;
 			return pageNum;
 		}
 		num ++; pageNum ++;
@@ -304,6 +305,7 @@ int FileHandle::findfreePage(const int length, int* remain)
 	*((int16_t*)newpage+PAGE_SIZE/sizeof(int16_t)-1) = 0;
 	*((int16_t*)newpage+PAGE_SIZE/sizeof(int16_t)-2) = 0;
 	if (appendPage(newpage) != 0) return -1;
+	*remain = PAGE_SIZE - 2 * sizeof(int16_t);
 	return pageNum;
 }
 
