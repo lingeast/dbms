@@ -11,7 +11,9 @@ typedef unsigned PageNum;
 
 #define PAGE_SIZE 4096
 
-const
+const int8_t INPAGE = 1;
+const int8_t DELETER = -1;
+const int8_t NOTINP = 0;
 
 struct fileInfo {
 	FILE* stream;

@@ -69,10 +69,13 @@ RC PageHandle::loadPage(int pageID, FileHandle& fh) {
 
 unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* newremain){
 	for(unsigned i = 0; i < *rdh.slotSize(); i++){
-		if ((rdh[i].length >= length) && (rdh[i].occupy == IFINPAGE::Delete)){
+		if ((rdh[i].length >= length) && (rdh[i].occupy == DELETER)){
 			memcpy(((int8_t*)this->data)+rdh[i].address,data,length);
 			rdh[i].occupy = 1;
+			*newremain -= length;
 			return i;
+		}else if ((rdh[i].length == 0)&& (rdh[i].occupy == DELETER)){
+
 		}
 	}
 
