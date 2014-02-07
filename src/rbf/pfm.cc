@@ -152,6 +152,7 @@ RC PageHandle::updateRecord(int slot, const void* data, unsigned int length, int
 
 	}
 
+	return -1;
 }
 
 
