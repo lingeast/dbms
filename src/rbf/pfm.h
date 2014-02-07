@@ -11,6 +11,8 @@ typedef unsigned PageNum;
 
 #define PAGE_SIZE 4096
 
+const
+
 struct fileInfo {
 	FILE* stream;
 	unsigned int count;
@@ -58,7 +60,7 @@ class PageDirHandle {
 };
 
 struct recordEntry {
-	int16_t address;												// address for record
+	int32_t address;												// address for record
 	int16_t length;													// length for record
 	int8_t occupy;													// if this Entry is occupied ,-1 for not, 1 for occupy
 };

@@ -45,9 +45,6 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 	void* newrecord = buildRecord(recordDescriptor, data, &length);
 	// find page to insert the record
 	int newremain = 0;
-	int pageNum = fileHandle.findfreePage(length, &newremain);
-	if (pageNum == -1) {free(newrecord);return -1;};
-	rid.pageNum = pageNum;
 	rid.pageNum = fileHandle.findfreePage(length, &newremain);
 	if (rid.pageNum == -1) {free(newrecord);return -1;};
 	PageHandle ph(rid.pageNum, fileHandle);
