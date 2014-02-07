@@ -141,16 +141,110 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 
 RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid){
 	PageHandle ph(rid.pageNum,fileHandle);
-	return ph.deleteRecord(rid.slotNum);
+	RID exactrid = rid;
+	RC result;
+	int newremain = 0;
+	result = ph.deleteRecord(&exactrid.slotNum, &exactrid.pageNum, &newremain);
+	// if migrate to other page
+	while(result == 1){
+		try{
+				// write back page and page remaining info
+				fileHandle.writePage(exactrid.pageNum, ph.dataBlock());
+				//fileHandle.setNewremain(rid.pageNum,newremain);
+			}catch(const std::exception &e){
+				std::cout<< e.what() << std::endl;
+				return -1;
+		}
 
+		// delete the migrate record recursively
+		ph.loadPage(&exactrid.pageNum,fileHandle);
+		result = ph.deleteRecord(&exactrid.slotNum, &exactrid.pageNum, &newremain);
+	}
+	try{
+		// write back page and page remaining info
+		fileHandle.writePage(exactrid.pageNum, ph.dataBlock());
+		fileHandle.setNewremain(exactrid.pageNum,newremain);
+	}catch(const std::exception &e){
+		std::cout<< e.what() << std::endl;
+		return -1;
+	}
+	return result;
 }
 
 RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, const RID &rid){
-	int length = 0;
+	int length = 0, newremain = 0;
+	RC result= 0;
 	void* newrecord = buildRecord(recordDescriptor, data, &length);
 	PageHandle ph(rid.pageNum,fileHandle);
+	RID exactrid = rid;
+	result = ph.updateRecord(exactrid.slotNum,newrecord,length,&newremain,&exactrid.pageNum,&exactrid.slotNum);
+	while(result ==1){
+		//find the exact position of the record
+		ph.loadPage(&exactrid.pageNum,fileHandle);
+		result = ph.updateRecord(exactrid.slotNum,newrecord,length,&newremain,&exactrid.pageNum,&exactrid.slotNum);
+	}
+	if (result == 0){
+		// update done
+		try{
+			// write back page and page remaining info
+			fileHandle.writePage(exactrid.pageNum, ph.dataBlock());
+			fileHandle.setNewremain(exactrid.pageNum,newremain);
+		}catch(const std::exception &e){
+			std::cout<< e.what() << std::endl;
+			return -1;
+		}
+		return 0;
+	}
+	if (result == 2){
+		// need migrate
+		RID newrid;
+		newrid.pageNum = fileHandle.findfreePage(length, &newremain);
+		if (newrid.pageNum == -1) {free(newrecord);return -1;};
+		PageHandle Migph(newrid.pageNum, fileHandle);
+		// insertRecord to target page
+		newrid.slotNum = Migph.insertRecord(newrecord, length, &newremain);
+		// if need reorganize
+		if (newrid.slotNum == -1) {
+			this->reorganizePage(fileHandle,recordDescriptor,newrid.pageNum);
+			newrid.slotNum = Migph.insertRecord(newrecord, length, &newremain);
+		}
+		free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
+		try{
+			// write back page and page remaining info
+			fileHandle.writePage(newrid.pageNum, Migph.dataBlock());
+			fileHandle.setNewremain(newrid.pageNum,newremain);
+		}catch(const std::exception &e){
+			std::cout<< e.what() << std::endl;
+			return -1;
+		}
+		ph.setMigrate(exactrid.slotNum, newrid.pageNum,newrid.slotNum,&newremain);
+		try{
+			// write back page and page remaining info
+			fileHandle.writePage(exactrid.pageNum, ph.dataBlock());
+			fileHandle.setNewremain(exactrid.pageNum,newremain);
+		}catch(const std::exception &e){
+			std::cout<< e.what() << std::endl;
+			return -1;
+		}
+		return 0;
+	}
+	if (result == 3){
+		//need reorganize
+		ph.reorganizePage();
+		ph.updateRecord(exactrid.slotNum,newrecord,length,&newremain,&exactrid.pageNum,&exactrid.slotNum);
+		try{
+			// write back page and page remaining info
+			fileHandle.writePage(exactrid.pageNum, ph.dataBlock());
+			fileHandle.setNewremain(exactrid.pageNum,newremain);
+		}catch(const std::exception &e){
+			std::cout<< e.what() << std::endl;
+			return -1;
+		}
+		return 0;
+	}
 
-
+	free(newrecord);
+	return -1;
 }
 
 RC RecordBasedFileManager::reorganizePage(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const unsigned pageNumber){

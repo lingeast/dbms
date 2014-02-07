@@ -98,13 +98,14 @@ class PageHandle {
 	};
 
 private:
-	int8_t data[PAGE_SIZE];	// to buffer page date
+	int8_t data[PAGE_SIZE + sizeof(int32_t)/sizeof(int8_t)];	// to buffer page date
 
 	/* may want to store the base address(or page ID) of this page in file
 	 * Example:
 	 * FileHandle.writePage(PageHandle.pageID(), PageHandle.dataBlock());
 	 */
 	int pageNum;
+	int remaining;
 	RecordDirHandle rdh;
 public:
 	/*  Init page data from file
@@ -131,12 +132,16 @@ public:
 		if(pageNum < 0) throw new std::logic_error("Page ID unavailable for a newly-created page");
 		return pageNum;
 	}
+	int getRemain() const{
+		return remaining;
+	}
 	void * dataBlock() const { return (void *) data;};	// expose the data block, for read/write
 	int readRecord(const int slotnum, void* data);	// read record with given slotnum
 	unsigned insertRecord(const void* data, unsigned int length, int* newremain);	// insert record, return slot ID
-	RC deleteRecord(int slot);
-	RC updateRecord(int slot, const void* data, unsigned int length, int* newremain);
+	RC deleteRecord(int* slot, int* pagenum, int* newremain);
+	RC updateRecord(int slot, const void* data, unsigned int length, int* newremain, int* migratePN, int* migrateSl);
 	RC reorganizePage();
+	RC setMigrate(int slot, int migratePN, int migrateSl, int* newremain);
 };
 
 
@@ -171,6 +176,7 @@ private:
 	void writeDirBlock(size_t offset, PageDirHandle pdh); // Write Directory info pdh to file[offset]
 	void moveCursor(size_t offset); 	// Call fseek(offset, file) to move cursor
 	int getAddr(PageNum pageNum);		// Get the address of the beginnnig of the page with given page number
+	int getAddrandRemain(PageNum pageNum, int* addr, int* remain);
 public:
     FileHandle();                                                    // Default constructor
     ~FileHandle();                                                   // Destructor
