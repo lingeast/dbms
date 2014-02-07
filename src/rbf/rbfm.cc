@@ -50,6 +50,11 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 	PageHandle ph(rid.pageNum, fileHandle);
 	// insertRecord to target page
 	rid.slotNum = ph.insertRecord(newrecord, length, &newremain);
+	// if need reorganize
+	if (rid.slotNum == -1) {
+		this->reorganizePage(fileHandle,recordDescriptor,rid.pageNum);
+		rid.slotNum = ph.insertRecord(newrecord, length, &newremain);
+	}
 	free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
 	try{
 		// write back page and page remaining info
@@ -82,7 +87,16 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 	// find the approximate length of the record we stored
 	length += sizeof(int16_t) * (recordDescriptor.size() + 1);
 	void* storedRecord = malloc(length);
-	length = ph.readRecord(rid.slotNum, storedRecord);
+	RID exactrid = rid;
+	do{
+		// find the exact the record place
+		if (length == 0){
+			exactrid.pageNum = *((int32_t*) data);
+			exactrid.slotNum = *((int16_t*)data + sizeof(int32_t)/sizeof(int16_t));
+			ph.loadPage(exactrid.pageNum,fileHandle);
+		}
+		length = ph.readRecord(exactrid.slotNum, storedRecord);
+	}while(length == 0);
 	if (length == -1) return -1;
 	revertRecord(recordDescriptor,data,storedRecord);
 	free(storedRecord);

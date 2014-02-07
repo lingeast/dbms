@@ -632,8 +632,8 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         int size = 0;
         memset(record, 0, 1000);
         prepareLargeRecord(i, record, &size);
-
         rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
+        cout<<"page id: "<<rid.pageNum<<" slot num: "<<rid.slotNum<<endl;
         assert(rc == success);
 
         rids.push_back(rid);

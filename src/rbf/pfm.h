@@ -62,7 +62,7 @@ class PageDirHandle {
 };
 
 struct recordEntry {
-	int32_t address;												// address for record
+	int32_t address;	// also for pagenum if migrate  		// address for record
 	int16_t length;													// length for record
 	int8_t occupy;													// if this Entry is occupied ,-1 for not, 1 for occupy
 };

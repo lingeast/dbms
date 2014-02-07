@@ -74,23 +74,38 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 			rdh[i].occupy = 1;
 			*newremain -= length;
 			return i;
-		}else if ((rdh[i].length == 0)&& (rdh[i].occupy == DELETER)){
-
+		}else if ((rdh[i].length == 0) && (rdh[i].occupy == DELETER)){
+			// calculate the continuous free space
+			int remain = PAGE_SIZE - *rdh.free() - 2 * sizeof(int16_t) - sizeof(recordEntry) * (*rdh.slotSize());
+			if (remain < length) return -1;
+			else{
+				memcpy((char*)this->data + *rdh.free(),data,length);
+				*newremain -= length;
+				return i;
+			}
 		}
 	}
-
+	// calculate the continuous free space
+	int remain = PAGE_SIZE - *rdh.free() - 2 * sizeof(int16_t) - sizeof(recordEntry) * (*rdh.slotSize());
+	if (remain < length + sizeof(recordEntry)) return -1;
 	(*rdh.slotSize())++;
 	rdh[*rdh.slotSize() - 1].address = *(rdh.free());
 	rdh[*rdh.slotSize() - 1].length = length;
 	rdh[*rdh.slotSize() - 1].occupy = 1;
 	*rdh.free() += length;
 	memcpy(((char*)this->data)+rdh[*rdh.slotSize() - 1].address,data,length);
-	*newremain = PAGE_SIZE - *rdh.free() - 2 * sizeof(int) - sizeof(recordEntry) * (*rdh.slotSize());
+	*newremain -= sizeof(recordEntry) + length;
 	return *rdh.slotSize() - 1;
 }
 
 int PageHandle::readRecord(const int slotnum, void* data){
-	if (rdh[slotnum].occupy != 1) return -1;
+	if (rdh[slotnum].occupy == -1) return -1;
+	if (rdh[slotnum].occupy == 0){
+		// copy the new address for the record
+		memcpy((char*)data, &(rdh[slotnum].address),sizeof(int32_t));
+		memcpy((char*)data + sizeof(int32_t), &(rdh[slotnum].length),sizeof(int16_t));
+		return 0;
+	}
 	int offset = rdh[slotnum].address;
 	int fieldNum = *(int16_t*)(this->data + offset);
 	int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
