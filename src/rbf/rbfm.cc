@@ -157,7 +157,7 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
 		}
 
 		// delete the migrate record recursively
-		ph.loadPage(&exactrid.pageNum,fileHandle);
+		ph.loadPage(exactrid.pageNum,fileHandle);
 		result = ph.deleteRecord(&exactrid.slotNum, &exactrid.pageNum, &newremain);
 	}
 	try{
@@ -180,7 +180,7 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
 	result = ph.updateRecord(exactrid.slotNum,newrecord,length,&newremain,&exactrid.pageNum,&exactrid.slotNum);
 	while(result ==1){
 		//find the exact position of the record
-		ph.loadPage(&exactrid.pageNum,fileHandle);
+		ph.loadPage(exactrid.pageNum,fileHandle);
 		result = ph.updateRecord(exactrid.slotNum,newrecord,length,&newremain,&exactrid.pageNum,&exactrid.slotNum);
 	}
 	if (result == 0){

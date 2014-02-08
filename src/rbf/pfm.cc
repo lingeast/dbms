@@ -57,7 +57,7 @@ PageHandle::PageHandle():pageNum(-1) {
 	remaining = PAGE_SIZE;
 }
 
-RC PageHandle::loadPage(int pageID, FileHandle& fh) {
+RC PageHandle::loadPage(unsigned int pageID, FileHandle& fh) {
 	pageNum = pageID;
 	try {
 		fh.readPage(pageNum, this->data);
@@ -116,8 +116,8 @@ int PageHandle::readRecord(const int slotnum, void* data){
 	return length;
 }
 
-RC PageHandle::deleteRecord(int* slot, int* pagenum, int* newremain){
-	if ((*(rdh.slotSize()) < slot) || (rdh[*slot].occupy == -1)){
+RC PageHandle::deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newremain){
+	if ((*rdh.slotSize() < *slot)||(rdh[*slot].occupy == -1)){
 		// not find record
 		return -1;
 	}
@@ -175,7 +175,7 @@ RC PageHandle::reorganizePage(){
 	return (slotptr - ptr + sizeof(recordEntry));
 }
 
-RC PageHandle::updateRecord(int slot, const void* data, unsigned int length, int* newremain,int* migratePN, int* migrateSl){
+RC PageHandle::updateRecord(unsigned int slot, const void* data, unsigned int length, int* newremain,unsigned int* migratePN, unsigned int* migrateSl){
 	// record doesn't exist
 	if ((*rdh.slotSize() < slot) || (rdh[slot].occupy != 1)){
 			return -1;

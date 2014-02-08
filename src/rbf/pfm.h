@@ -126,7 +126,7 @@ public:
 	PageHandle();
 
 
-	RC loadPage(int pageID, FileHandle& fh);	// load another page
+	RC loadPage(unsigned int pageID, FileHandle& fh);	// load another page
 	int getAddr(int slot) const { return rdh[slot].address;}	// return record address
 	int pageID() const {
 		if(pageNum < 0) throw new std::logic_error("Page ID unavailable for a newly-created page");
@@ -138,8 +138,8 @@ public:
 	void * dataBlock() const { return (void *) data;};	// expose the data block, for read/write
 	int readRecord(const int slotnum, void* data);	// read record with given slotnum
 	unsigned insertRecord(const void* data, unsigned int length, int* newremain);	// insert record, return slot ID
-	RC deleteRecord(int* slot, int* pagenum, int* newremain);
-	RC updateRecord(int slot, const void* data, unsigned int length, int* newremain, int* migratePN, int* migrateSl);
+	RC deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newremain);
+	RC updateRecord(unsigned int slot, const void* data, unsigned int length, int* newremain, unsigned int* migratePN, unsigned int* migrateSl);
 	RC reorganizePage();
 	RC setMigrate(int slot, int migratePN, int migrateSl, int* newremain);
 };

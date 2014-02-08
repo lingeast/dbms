@@ -734,12 +734,12 @@ int main()
     RBFTest_5(pfm); 
     RBFTest_6(pfm);
     RBFTest_7(pfm);
-    RBFTest_8(rbfm);
+    //RBFTest_8(rbfm);
     
     vector<RID> rids;
     vector<int> sizes;
-    RBFTest_9(rbfm, rids, sizes);
-    RBFTest_10(rbfm, rids, sizes);
+    //RBFTest_9(rbfm, rids, sizes);
+    //RBFTest_10(rbfm, rids, sizes);
      
     return 0;
 }
