@@ -47,7 +47,7 @@ PageHandle::PageHandle(int pageID, FileHandle& fh) {
 	pageNum = pageID;
 	fh.readPage(pageNum, this->data);
 	rdh = RecordDirHandle(*this);
-	memcpy(&remaining, (char*)data + PAGE_SIZE , sizeof(int32_t));
+	remaining = fh.getRemain(pageNum);
 }
 
 PageHandle::PageHandle():pageNum(-1) {
@@ -116,6 +116,23 @@ int PageHandle::readRecord(const int slotnum, void* data){
 	return length;
 }
 
+int PageHandle::readnextRecord(int* slotnum, void* data){
+	if (rdh[*slotnum].occupy == -1) return -1;
+	if (rdh[*slotnum].occupy == 0){
+		// copy the new address for the record
+		memcpy((char*)data, &(rdh[*slotnum].address),sizeof(int32_t));
+		memcpy((char*)data + sizeof(int32_t), &(rdh[*slotnum].length),sizeof(int16_t));
+		return 0;
+	}
+	int offset = rdh[*slotnum].address;
+	int fieldNum = *(int16_t*)(this->data + offset);
+	int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
+	memcpy(data, this->data + offset, length);
+	*slotnum ++ ;
+	return length;
+}
+
+
 RC PageHandle::deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newremain){
 	if ((*rdh.slotSize() < *slot)||(rdh[*slot].occupy == -1)){
 		// not find record
@@ -175,7 +192,7 @@ RC PageHandle::reorganizePage(){
 	return (slotptr - ptr + sizeof(recordEntry));
 }
 
-RC PageHandle::updateRecord(unsigned int slot, const void* data, unsigned int length, int* newremain,unsigned int* migratePN, unsigned int* migrateSl){
+RC PageHandle::updateRecord(unsigned int slot, const void* data, unsigned int length,int* newremain,unsigned int* migratePN, unsigned int* migrateSl){
 	// record doesn't exist
 	if ((*rdh.slotSize() < slot) || (rdh[slot].occupy != 1)){
 			return -1;
@@ -419,7 +436,7 @@ int FileHandle::getAddr(PageNum pageNum) {
 	return pdh[pageIndex].address;
 }
 
-int FileHandle::getAddrandRemain(PageNum pageNum, int* addr, int* remain) {
+int FileHandle::getRemain(PageNum pageNum) {
 	PageDirHandle pdh(INIT_DIR_OFFSET, file);
 	int pageIndex = pageNum;
 	while(pageIndex >= PAGE_DIR_SIZE) {
@@ -427,20 +444,17 @@ int FileHandle::getAddrandRemain(PageNum pageNum, int* addr, int* remain) {
 		pageIndex -= PAGE_DIR_SIZE;
 	}
 	if (pdh.pageNum() <= pageIndex) return -1;
-	*addr = pdh[pageIndex].address;
-	*remain = pdh[pageIndex].remain;
-	return 0;
+	return pdh[pageIndex].remain;
 }
 
 RC FileHandle::readPage(PageNum pageNum, void *data)
 {
 	int offset = 0;
-	int32_t remain = 0;
-	getAddrandRemain(pageNum, &offset, &remain);
+	offset = getAddr(pageNum);
 	if (offset < 0) return -1;
 	try {
 		readPageBlock(offset, data);
-		memcpy((char*)data + PAGE_SIZE, &remain, sizeof(int32_t));
+		//memcpy((char*)data + PAGE_SIZE, &remain, sizeof(int32_t));
 	} catch (const std::exception& e) {
 		std::cout<< e.what() << std::endl;
 		return -1;

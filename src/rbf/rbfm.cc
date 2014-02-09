@@ -352,3 +352,28 @@ void RecordBasedFileManager::revertRecord(const vector<Attribute> &recordDescrip
 		}
 	}
 }
+
+RC RecordBasedFileManager::scan(FileHandle &fileHandle,
+      const vector<Attribute> &recordDescriptor,
+      const string &conditionAttribute,
+      const CompOp compOp,                  // comparision type such as "<" and "="
+      const void *value,                    // used in the comparison
+      const vector<string> &attributeNames, // a list of projected attributes
+      RBFM_ScanIterator &rbfm_ScanIterator){
+
+
+	PageDirHandle pdh(INIT_DIR_OFFSET, fileHandle.getFile());
+	int num = 0;
+	void *data = malloc(PAGE_SIZE);
+	while(true) {
+		PageHandle ph(num,fileHandle);
+		ph.readnextRecord(0,data);
+		num += pdh.pageNum();
+		int nextDir = pdh.nextDir();
+		if (nextDir < 0) break;
+		else pdh.readNewDir(nextDir, fileHandle.getFile());
+	}
+    return num;
+	return -1;
+}
+

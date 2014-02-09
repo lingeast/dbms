@@ -60,6 +60,9 @@ The scan iterator is NOT required to be implemented for part 1 of the project
 
 
 class RBFM_ScanIterator {
+private:
+	void* ptr;
+	vector <void*> recordlist;
 public:
   RBFM_ScanIterator() {};
   ~RBFM_ScanIterator() {};
@@ -122,7 +125,7 @@ IMPORTANT, PLEASE READ: All methods below this comment (other than the construct
   RC reorganizePage(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const unsigned pageNumber);
 
   // scan returns an iterator to allow the caller to go through the results one by one. 
-  RC scan(const FileHandle &fileHandle,
+  RC scan(FileHandle &fileHandle,
       const vector<Attribute> &recordDescriptor,
       const string &conditionAttribute,
       const CompOp compOp,                  // comparision type such as "<" and "="

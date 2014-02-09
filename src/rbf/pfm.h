@@ -98,7 +98,7 @@ class PageHandle {
 	};
 
 private:
-	int8_t data[PAGE_SIZE + sizeof(int32_t)/sizeof(int8_t)];	// to buffer page date
+	int8_t data[PAGE_SIZE];	// to buffer page date
 
 	/* may want to store the base address(or page ID) of this page in file
 	 * Example:
@@ -137,6 +137,7 @@ public:
 	}
 	void * dataBlock() const { return (void *) data;};	// expose the data block, for read/write
 	int readRecord(const int slotnum, void* data);	// read record with given slotnum
+	int readnextRecord(int* slotnum, void* data);	// read record with given slotnum
 	unsigned insertRecord(const void* data, unsigned int length, int* newremain);	// insert record, return slot ID
 	RC deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newremain);
 	RC updateRecord(unsigned int slot, const void* data, unsigned int length, int* newremain, unsigned int* migratePN, unsigned int* migrateSl);
@@ -176,20 +177,19 @@ private:
 	void writeDirBlock(size_t offset, PageDirHandle pdh); // Write Directory info pdh to file[offset]
 	void moveCursor(size_t offset); 	// Call fseek(offset, file) to move cursor
 	int getAddr(PageNum pageNum);		// Get the address of the beginnnig of the page with given page number
-	int getAddrandRemain(PageNum pageNum, int* addr, int* remain);
 public:
     FileHandle();                                                    // Default constructor
     ~FileHandle();                                                   // Destructor
 
-    FILE* getFile(){return file;}									// file instance getter
+    FILE* getFile() const {return file;}									// file instance getter
     void setFile(FILE * that) {file = that;}						// file setter
-
     RC readPage(PageNum pageNum, void *data);                           // Get a specific page
     RC writePage(PageNum pageNum, const void *data);                    // Write a specific page
     RC appendPage(const void *data);                                    // Append a specific page
     unsigned getNumberOfPages();                                        // Get the number of pages in the file
     RC setNewremain(PageNum pageNum, int newremain);					// Update the remain attribute in the page directory
     int findfreePage(const int length, int* remain);									// find a free page for inserting Record with given length
+	int getRemain(PageNum pageNum);
 };
 
  #endif
