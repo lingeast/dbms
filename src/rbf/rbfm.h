@@ -87,7 +87,7 @@ public:
 
   // "data" follows the same format as RecordBasedFileManager::insertRecord()
   RC getNextRecord(RID &rid, void *data);
-  RC close() { return -1; };
+  RC close();
 };
 
 
