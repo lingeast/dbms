@@ -58,17 +58,35 @@ The scan iterator is NOT required to be implemented for part 1 of the project
 //  }
 //  rbfmScanIterator.close();
 
-
+class RecordBasedFileManager;
 class RBFM_ScanIterator {
 private:
-	void* ptr;
-	vector <void*> recordlist;
+	FileHandle fileHandle;
+	vector<Attribute> recordDescriptor;
+	string conditionAttribute;
+	CompOp compOp;                  // comparision type such as "<" and "="
+	const void *value;                   // used in the comparison
+	vector<string> attributeNames; // a list of projected attributes
+	RecordBasedFileManager* rbfm;
+
+	RID currentRID;
+	PageHandle ph;
+
 public:
-  RBFM_ScanIterator() {};
-  ~RBFM_ScanIterator() {};
+  RBFM_ScanIterator();
+  ~RBFM_ScanIterator();
+
+  void setIterator(FileHandle &fileHandle,
+	      const vector<Attribute> &recordDescriptor,
+	      const string &conditionAttribute,
+	      const CompOp compOp,                  // comparision type such as "<" and "="
+	      const void *value,                    // used in the comparison
+	      const vector<string> &attributeNames, // a list of projected attributes
+	      RecordBasedFileManager *rbfm
+  	  	  );
 
   // "data" follows the same format as RecordBasedFileManager::insertRecord()
-  RC getNextRecord(RID &rid, void *data) { return RBFM_EOF; };
+  RC getNextRecord(RID &rid, void *data);
   RC close() { return -1; };
 };
 
@@ -120,7 +138,7 @@ IMPORTANT, PLEASE READ: All methods below this comment (other than the construct
   // Assume the rid does not change after update
   RC updateRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, const RID &rid);
 
-  RC readAttribute(const FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, const string attributeName, void *data);
+  RC readAttribute(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, const string attributeName, void *data);
 
   RC reorganizePage(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const unsigned pageNumber);
 

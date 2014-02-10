@@ -59,21 +59,23 @@ PageHandle::PageHandle():pageNum(-1) {
 
 RC PageHandle::loadPage(unsigned int pageID, FileHandle& fh) {
 	pageNum = pageID;
+	RC ret;
 	try {
-		fh.readPage(pageNum, this->data);
+		ret = fh.readPage(pageNum, this->data);
 		rdh = RecordDirHandle(*this);
 	} catch (const std::exception& e) {
 		std::cout<< e.what() << std::endl;
 		return -1;
 	}
-	return 0;
+	return ret;
 }
 
-unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* newremain){
+unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* newremain, unsigned int ifmig){
 	for(unsigned i = 0; i < *rdh.slotSize(); i++){
 		if ((rdh[i].length >= length) && (rdh[i].occupy == DELETER)){
 			memcpy(((int8_t*)this->data)+rdh[i].address,data,length);
-			rdh[i].occupy = 1;
+			if (ifmig == 0)	rdh[i].occupy = 1;
+			else rdh[i].occupy = 2;
 			*newremain -= length;
 			return i;
 		}else if ((rdh[i].length == 0) && (rdh[i].occupy == DELETER)){
@@ -81,7 +83,8 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 			int remain = PAGE_SIZE - *rdh.free() - 2 * sizeof(int16_t) - sizeof(recordEntry) * (*rdh.slotSize());
 			if (remain > length){
 				memcpy((char*)this->data + *rdh.free(),data,length);
-				rdh[i].occupy = 1;
+				if (ifmig == 0)	rdh[i].occupy = 1;
+				else rdh[i].occupy = 2;
 				rdh[i].length = length;
 				*newremain -= length;
 				return i;
@@ -94,7 +97,8 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 	(*rdh.slotSize())++;
 	rdh[*rdh.slotSize() - 1].address = *(rdh.free());
 	rdh[*rdh.slotSize() - 1].length = length;
-	rdh[*rdh.slotSize() - 1].occupy = 1;
+	if (ifmig == 0)	rdh[*rdh.slotSize() - 1].occupy = 1;
+	else rdh[*rdh.slotSize() - 1].occupy = 2;
 	*rdh.free() += length;
 	memcpy(((char*)this->data)+rdh[*rdh.slotSize() - 1].address,data,length);
 	*newremain -= sizeof(recordEntry) + length;
@@ -103,7 +107,7 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 
 int PageHandle::readRecord(const int slotnum, void* data){
 	if (rdh[slotnum].occupy == -1) return -1;
-	if (rdh[slotnum].occupy == 0){
+	if (rdh[slotnum].occupy == 0||rdh[slotnum].occupy == 3){
 		// copy the new address for the record
 		memcpy((char*)data, &(rdh[slotnum].address),sizeof(int32_t));
 		memcpy((char*)data + sizeof(int32_t), &(rdh[slotnum].length),sizeof(int16_t));
@@ -128,7 +132,7 @@ int PageHandle::readnextRecord(int* slotnum, void* data){
 	int fieldNum = *(int16_t*)(this->data + offset);
 	int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
 	memcpy(data, this->data + offset, length);
-	*slotnum ++ ;
+	(*slotnum) ++ ;
 	return length;
 }
 
@@ -138,7 +142,7 @@ RC PageHandle::deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newr
 		// not find record
 		return -1;
 	}
-	if (rdh[*slot].occupy == 0){
+	if (rdh[*slot].occupy == 0||rdh[*slot].occupy == 3){
 		// for record in other page
 		int tempSlot = rdh[*slot].length;
 		*pagenum = rdh[*slot].address;
@@ -149,7 +153,7 @@ RC PageHandle::deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newr
 		//*newremain = -1;
 		return 1;
 	}
-	if (rdh[*slot].occupy == 1){
+	if (rdh[*slot].occupy == 1 || rdh[*slot].occupy == 2 ){
 		rdh[*slot].occupy = -1;
 		remaining -= rdh[*slot].length;
 		*newremain = remaining;
@@ -161,10 +165,10 @@ RC PageHandle::deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newr
 RC PageHandle::reorganizePage(){
 	int16_t ptr = 0, slotnum = 0;
 	void* newpage = malloc(PAGE_SIZE);
-	memcpy((int16_t*)newpage + PAGE_SIZE/sizeof(int16_t) - 1, rdh.slotSize(), sizeof(int16_t));
-	int slotptr = PAGE_SIZE/sizeof(int16_t) - 2 - sizeof(recordEntry);
+	*((int16_t*)newpage+PAGE_SIZE/sizeof(int16_t) - 1) = *rdh.slotSize();
+	int slotptr = PAGE_SIZE - 2 * sizeof(int16_t)  - sizeof(recordEntry);
 	while(*rdh.slotSize() > slotnum){
-		if (rdh[slotnum].occupy == 1)
+		if (rdh[slotnum].occupy == 1 || rdh[slotnum].occupy == 2)
 		{
 			int offset = rdh[slotnum].address;
 			int fieldNum = *(int16_t*)(this->data + offset);
@@ -181,10 +185,11 @@ RC PageHandle::reorganizePage(){
 			slotptr -= sizeof(recordEntry);
 		}
 		// record in other page
-		if (rdh[slotnum].occupy == 0){
+		if (rdh[slotnum].occupy == 0||rdh[slotnum].occupy == 3){
 			memcpy((char*)newpage + slotptr, data + slotptr, sizeof(recordEntry));
 			slotptr -= sizeof(recordEntry);
 		}
+		slotnum++;
 	}
 	memcpy((int16_t*)newpage + PAGE_SIZE/sizeof(int16_t) - 2, &ptr, sizeof(int16_t));
 	memcpy(data, newpage, PAGE_SIZE);
@@ -194,10 +199,10 @@ RC PageHandle::reorganizePage(){
 
 RC PageHandle::updateRecord(unsigned int slot, const void* data, unsigned int length,int* newremain,unsigned int* migratePN, unsigned int* migrateSl){
 	// record doesn't exist
-	if ((*rdh.slotSize() < slot) || (rdh[slot].occupy != 1)){
+	if ((*rdh.slotSize() < slot) || (rdh[slot].occupy == -1)){
 			return -1;
 	}
-	if (rdh[slot].occupy == 0){
+	if (rdh[slot].occupy == 0 || rdh[slot].occupy == 3){
 		//in other page
 		*migratePN = rdh[slot].address;
 		*migrateSl = rdh[slot].length;
@@ -235,12 +240,26 @@ RC PageHandle::setMigrate(int slot, int migratePN, int migrateSl, int* newremain
 	int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
 	remaining -= length;
 	*newremain = remaining;
-	rdh[slot].occupy = 0;
+	if (rdh[slot].occupy == 2) rdh[slot].occupy = 3;
+	else rdh[slot].occupy = 0;
 	rdh[slot].address = migratePN;
 	rdh[slot].length = migrateSl;
 	return 0;
 }
 
+RC PageHandle::readNextRecord(unsigned int* slot, void* data){
+	if(*slot >= *rdh.slotSize()) return 1; //load next page
+	while((rdh[*slot].occupy == -1 ||rdh[*slot].occupy == 2)  && *slot < *rdh.slotSize()){
+	// skip deleted record or migrated record
+		(*slot)++;
+	}
+	if(*slot >= *rdh.slotSize()) return 1; //load next page
+	if (rdh[*slot].occupy == 0){
+		return 2;
+	}
+	this->readRecord(*slot, data);
+	return 0;
+}
 
 PagedFileManager* PagedFileManager::_pf_manager = 0;
 

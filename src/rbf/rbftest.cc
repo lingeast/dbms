@@ -671,17 +671,26 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
 
     vector<Attribute> recordDescriptor;
     createLargeRecordDescriptor(recordDescriptor);
-    
+    rbfm->reorganizePage(fileHandle,recordDescriptor,0);
+    RBFM_ScanIterator testIterator;
+    string temp1;
+    void* temp2 = malloc(10);
+    vector<string> temp3;
+    CompOp test4 = LT_OP;
+    testIterator.setIterator(fileHandle,recordDescriptor,temp1,test4,temp2,temp3,rbfm);
+    RID iterRID;
+    iterRID.pageNum=0;iterRID.slotNum=0;
+
     for(int i = 0; i < numRecords; i++)
     {
         memset(record, 0, 1000);
         memset(returnedData, 0, 1000);
+
+        //testIterator.getNextRecord(iterRID,returnedData);
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
         assert(rc == success);
-        
         cout << "Returned Data:" << endl;
-        rbfm->printRecord(recordDescriptor, returnedData);
-
+        //rbfm->printRecord(recordDescriptor, returnedData);
         int size = 0;
         prepareLargeRecord(i, record, &size);
         if(memcmp(returnedData, record, sizes[i]) != 0)

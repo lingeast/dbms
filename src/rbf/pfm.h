@@ -138,11 +138,12 @@ public:
 	void * dataBlock() const { return (void *) data;};	// expose the data block, for read/write
 	int readRecord(const int slotnum, void* data);	// read record with given slotnum
 	int readnextRecord(int* slotnum, void* data);	// read record with given slotnum
-	unsigned insertRecord(const void* data, unsigned int length, int* newremain);	// insert record, return slot ID
+	unsigned insertRecord(const void* data, unsigned int length, int* newremain, unsigned int ifmig);	// insert record, return slot ID
 	RC deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newremain);
 	RC updateRecord(unsigned int slot, const void* data, unsigned int length, int* newremain, unsigned int* migratePN, unsigned int* migrateSl);
 	RC reorganizePage();
 	RC setMigrate(int slot, int migratePN, int migrateSl, int* newremain);
+	RC readNextRecord(unsigned int* slot, void* data);
 };
 
 
