@@ -91,12 +91,8 @@ public:
 
   // "data" follows the same format as RecordBasedFileManager::insertRecord()
   RC getNextRecord(RID &rid, void *data);
-<<<<<<< HEAD
   RC compareRecord(void *data1, const void *data2, int length);
-  RC close() { return -1; };
-=======
   RC close();
->>>>>>> 7c6cf31114dece6596176b14d9cc62b733dcb970
 };
 
 
