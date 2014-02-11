@@ -288,6 +288,8 @@ void secA_6(const string &tableName, const int nameLength, const string &name, c
     rc = rm->readTuple(tableName, rid, returnedData);
     assert(rc == success);
 
+    // TODO remove test code
+    cout << "DELETETABLE" << endl;
     // Test Delete Table
     rc = rm->deleteTable(tableName);
     assert(rc == success);
@@ -483,7 +485,7 @@ void Tests()
 
     // TODO test secA_6 again after scan_it is completed
     // Delete Table
-    //secA_6("tbl_employee", 6, "Martin", 26, 173.6, 8000);
+    secA_6("tbl_employee", 6, "Martin", 26, 173.6, 8000);
    
     memProfile();
  
@@ -509,6 +511,7 @@ int main()
 
     Tests();
 
+    getchar();
     return 0;
 }
 

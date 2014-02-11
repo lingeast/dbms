@@ -132,6 +132,8 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 				dataoffset += *stringlen + sizeof(int32_t);
 				cout<<"FieldContent: "<<str<<endl;
 				free(stringlen);
+				// TODO Free
+				free(str);
 				break;
 		}
 		cout<<endl;
@@ -247,7 +249,8 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
 	return -1;
 }
 RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, const string attributeName, void *data){
-	void * record = malloc(PAGE_SIZE);
+	// TODO change malloc
+	char record[PAGE_SIZE];
 	int ret = 0;
 	ret = this->readRecord(fileHandle,recordDescriptor,rid,record);
 	int i = 0;
@@ -424,12 +427,18 @@ void RBFM_ScanIterator::setIterator(FileHandle &fileHandle,
 	this->rbfm = rbfm;
 	for (int j = 0 ; j < attributeNames.size() ; j++ ){
 		for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
-			if (attributeNames[j] == (recordDescriptor[i]).name){
-				this->attriID.push_back(j);
+			if (attributeNames[j].compare((recordDescriptor[i]).name) == 0){
+				//cout << attributeNames[j] << "(" << j << ")" << endl;
+				this->attriID.push_back(i);
 				break;
 			}
 		}
 	}
+
+	//TODO remove test code
+	//for (int i = 0; i < attriID.size(); i++) {
+		//cout << "attriID: " << attriID[i] << endl;
+	//}
 	for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
 		if ((recordDescriptor[i]).name == conditionAttribute){
 			attributenum = i;
@@ -441,7 +450,20 @@ void RBFM_ScanIterator::setIterator(FileHandle &fileHandle,
 
 RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){
 	if (this->type == 2)
+	{
 		length = *(int32_t*)data2;
+		// TODO test code
+		//cout << "strlen: " << length << endl;
+		//char* cur = (char*)data2;
+		//cur += sizeof(int32_t);
+		//for (int i = 0; i < length; i++) {
+		//		cout << *(cur + i) << " == " << *((char*)data1 + i) << endl;
+		//}
+		// test code end
+
+	}
+
+
 	switch(this->compOp){
 	case 0: {
 			switch(this->type){
@@ -498,7 +520,8 @@ RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){
 }
 
 RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
-	void* tempdata = malloc(PAGE_SIZE);
+	//cout << "getNextRecord Begin" << endl;
+	char tempdata[PAGE_SIZE];
 	RC ret = -1;
 	int flag = 0;
 	while (flag == 0)
@@ -542,19 +565,23 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 		int attroffset = 0;
 		int attrlen = 0;
 		if (this->attributenum == 0) {
-			attroffset = sizeof(int16_t) * (*(int16_t*)tempdata);
+			attroffset = sizeof(int16_t) * ((*(int16_t*)tempdata) + 1);
 			attrlen = *((int16_t*)tempdata + 1) - attroffset;
 		}
 		else {
 			attroffset = *((int16_t*)tempdata + attroffset);
 			attrlen = *((int16_t*)tempdata + attroffset + 1) - attroffset;
 		}
-
 		void* attr = malloc(attrlen);
 		memcpy(attr,(char*)tempdata + attroffset,attrlen);
 		flag = this->compareRecord(attr,this->value,attrlen);
+		// TODO free malloc
+		free(attr);
 	}
+	//cout << "get One Record" << endl;
 	int outputoffset = 0;
+	//cout << "RID in iter: " << rid.pageNum << ", " << rid.slotNum << endl;
+	//cout << "ATTRI_SIZE" << attriID.size() << endl;
 	for(int i = 0; i < attriID.size(); i++){
 		int32_t attrioffset = 0;
 		int32_t attrilen = 0;
@@ -575,6 +602,7 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 			outputoffset += attrilen;
 		}
 	}
+
 
 	return ret;
 }

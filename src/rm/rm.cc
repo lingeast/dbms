@@ -147,9 +147,91 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 
 RC RelationManager::deleteTable(const string &tableName)
 {
-	//RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
-    return -1;
+
+	RM_ScanIterator RM_tblit;
+	// Prepare condition string
+	char* tblNameVal = new char[sizeof(int32_t) + tableName.size()];
+	uint32_t nameLen = tableName.size();
+	memcpy(tblNameVal, &nameLen, sizeof(nameLen));
+	assert(sizeof(nameLen) == 4);
+	memcpy(tblNameVal + sizeof(nameLen), tableName.c_str(), nameLen);
+
+	//cout << "StrLen: " << *((int32_t*) tblNameVal) << endl;
+
+	//for (int i = 0; i < 4 + tableName.size(); i++) {
+	//	cout <<  *(tblNameVal + i) << " ," << endl;
+	//}
+
+	vector<string> attributeNames;
+
+
+	//for (int i = 0; i < tblRecord.size(); i++) {
+		//attributeNames.push_back(tblRecord[i].name);
+	//}
+
+	attributeNames.push_back(tblRecord[tblRecord.size() - 1].name);
+
+
+	//cout << "Condition Attribute: " ;
+	//for (int i = 0; i < attributeNames.size(); i++) {
+	//	cout << attributeNames[i];
+	//}
+
+	scan(string(TABLE_CATALOG),	//tableName
+	      string(tblRecord[0].name),	//conditionAttribute
+	      EQ_OP,				// CompOp
+	      tblNameVal,					// void* value
+	      attributeNames,	// vector<string>& attributeNames
+	      RM_tblit);			// rm_ScanIterator
+
+
+	RID rid;
+	uint32_t colNum;
+	//char buffer[2048];
+	int ret = RM_tblit.getNextTuple(rid, &colNum);
+	//cout << "colNum: " << colNum << endl;
+	RM_tblit.close();
+	if (ret == RM_EOF) return -1;
+
+	FileHandle tblF;
+	rbfm->openFile(string(TABLE_CATALOG), tblF);
+	if (rbfm->deleteRecord(tblF, vector<Attribute>(), rid)) return -1;
+	rbfm->closeFile(tblF);
+
+
+	vector<RID> colRID;
+	RM_ScanIterator RM_colit;
+	scan(string(COL_CATALOG),	//tableName
+	      string(tblRecord[0].name),	//conditionAttribute
+	      EQ_OP,				// CompOp
+	      tblNameVal,					// void* value
+	      vector<string>(),	// vector<string>& attributeNames
+	      RM_colit);			// rm_ScanIterator
+	RID tmprid;
+	//cout << "Scan Column Table..." << endl;
+
+	uint32_t buffer;
+	while(RM_colit.getNextTuple(tmprid, NULL) != EOF) {
+		colRID.push_back(tmprid);
+	}
+
+	FileHandle colF;
+	if (rbfm->openFile(string(COL_CATALOG), colF) != 0) return -1;
+	for (int i = 0; i < colRID.size(); i++) {
+		//cout << "RID: " << colRID[i].pageNum << " , " << colRID[i].slotNum << endl;
+		if (rbfm->deleteRecord(colF, vector<Attribute>(), colRID[i]) != 0)
+			return -1;
+	}
+
+	delete tblNameVal;
+	//rbfm->printRecord(this->tblRecord, buffer);
+	//cout << "ColNum: " << *((uint32_t*)buffer) << endl;
+	//out << "ColNum: " << colNum << endl;
+	//cout << "RID: " << rid.pageNum << " , " << rid.slotNum << endl;
+
+    return 0;
 }
+
 int RelationManager::getTableColNum(const string &tableName) {
 	//RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
 		string tbllog(TABLE_CATALOG);
@@ -179,8 +261,6 @@ int RelationManager::getTableColNum(const string &tableName) {
 		RID id;
 		int ret = 0;
 		char* cursor = buffer;
-
-		cout << "Get Next Tuples Now" << endl;
 
 		while((ret = RM_tblit.getNextTuple(id, buffer)) != RM_EOF) {
 			uint32_t* tableNameLen = (uint32_t*)(buffer + 0);
@@ -227,28 +307,36 @@ int RelationManager::fillAttr(void* record, Attribute& attr) {
 
 RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &attrs)
 {
-	cout << "Try to get table column" << endl;
 	int attrSize = getTableColNum(tableName);
-	cout << "Table column: "<< attrSize << endl;
+	//cout << "Table column: "<< attrSize << endl;
 	if (attrSize <= 0) return -1;
 
 	//cout << "Found matching table name in catalog, NUMCOL = " << attrSize << endl;
 	//rbfm->printRecord(this->tblRecord, buffer);
 
-	//RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
+	// Init vector of attribute with emptyAttr on each cell
 	Attribute emptyAttr;
 	emptyAttr.name = string("");
 	emptyAttr.type = TypeInt;
 	emptyAttr.length = 0;
 	vector<Attribute> copyAttrs(attrSize, emptyAttr);
 
+
+	vector<string> attributeNames;
+	for (int i = 0; i < colRecord.size(); i++) {
+		attributeNames.push_back(colRecord[i].name);
+	}
+
+
 	RM_ScanIterator RM_colit;
-	scan(string(COL_CATALOG),
-	      string("not used"),
-	      EQ_OP,
-	      NULL,
-	      vector<string>(),
-	      RM_colit);
+
+	scan(string(COL_CATALOG),	//tableName
+	      string("not used"),	//conditionAttribute
+	      NO_OP,				// CompOp
+	      NULL,					// void* value
+	      attributeNames,	// vector<string>& attributeNames
+	      RM_colit);			// rm_ScanIterator
+
 	// Found matching table name in catalog
 	int cnt = 0;
 	char buffer[2048];
@@ -333,10 +421,12 @@ RC RelationManager::readTuple(const string &tableName, const RID &rid, void *dat
 	FileHandle tableF;
 	if (rbfm->openFile(tableName + TABLE_SUFFIX, tableF) != 0) return -1;
 	vector<Attribute> recDscptr;
+	//cout << "Want to get attri" << endl;
 	if (getAttributes(tableName, recDscptr) != 0){
 		rbfm->closeFile(tableF);
 		return -1;
 	}
+	//cout << "get attr end" << endl;
 	// TODO remove test code
 	//std::cout << "readRecord Begin" << std::endl;
 	// TODO test code end
@@ -422,7 +512,7 @@ RC RelationManager::scan(const string &tableName,
     	recDscptr = tblRecord;
     	FileHandle fh;
     	//RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
-    	rbfm->openFile(tableName, fh);
+    	if (rbfm->openFile(tableName, fh) != 0) return -1;
     	rm_ScanIterator.setIterator(fh, recDscptr, conditionAttribute,
     			compOp, value, attributeNames, rbfm);
     	return 0;
@@ -431,12 +521,19 @@ RC RelationManager::scan(const string &tableName,
     	recDscptr = colRecord;
     	FileHandle fh;
     	//RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
-    	rbfm->openFile(tableName, fh);
+    	if (rbfm->openFile(tableName, fh) != 0) return -1;
     	rm_ScanIterator.setIterator(fh, recDscptr, conditionAttribute,
     	    			compOp, value, attributeNames, rbfm);
     	return 0;
     }
-    assert(false);
+
+    if (getAttributes(tableName, recDscptr) != 0) return -1;
+    FileHandle tblF;
+    if (rbfm->openFile(tableName + TABLE_SUFFIX, tblF) != 0) return -1;
+    rm_ScanIterator.setIterator(tblF, recDscptr, conditionAttribute,
+    		compOp, value, attributeNames, rbfm);
+
+    //assert(false);
     return 0;
 }
 

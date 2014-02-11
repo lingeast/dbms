@@ -106,7 +106,7 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 }
 
 int PageHandle::readRecord(const int slotnum, void* data){
-	if (slotnum >= *(rdh.slotSize())) return -2;
+ 	if (slotnum >= *(rdh.slotSize())) return -2;
 	if (rdh[slotnum].occupy == -1) return -1;
 	if (rdh[slotnum].occupy == 0||rdh[slotnum].occupy == 3){
 		// copy the new address for the record
@@ -249,8 +249,10 @@ RC PageHandle::setMigrate(int slot, int migratePN, int migrateSl, int* newremain
 }
 
 RC PageHandle::readNextRecord(unsigned int* slot, void* data){
-	if(*slot >= *rdh.slotSize()) return 1; //load next page
-	while((rdh[*slot].occupy == -1 ||rdh[*slot].occupy == 2)  && *slot < *rdh.slotSize()){
+	if(*slot >= *rdh.slotSize()) {
+		return 1; //load next page
+	}
+	while(*slot < *rdh.slotSize() && (rdh[*slot].occupy == -1 ||rdh[*slot].occupy == 2)  ){
 	// skip deleted record or migrated record
 		(*slot)++;
 	}
