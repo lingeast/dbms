@@ -532,24 +532,16 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 		memcpy(attr,(char*)tempdata + attroffset,attrlen);
 		flag = this->compareRecord(attr,this->value,attrlen);
 	}
-	//TODO Remove Test Code
-	cout << "Should Return True:" << flag << endl;
-	for (int i = 0; i < attriID.size(); i++) {
-		cout << attriID[i] << ", " ;
-	}
-	cout << endl;
-	//TODO Test Code End
 	int outputoffset = 0;
-	for(int i = 0; i <= attriID.size(); i++){
-		int attrioffset = 0;
-		int attrilen = 0;
-		cout << "AttriID: " << attriID[i] << endl;
+	for(int i = 0; i < attriID.size(); i++){
+		int32_t attrioffset = 0;
+		int32_t attrilen = 0;
 		if(attriID[i] == 0){
-			attrioffset = sizeof(int16_t) * (*(int16_t*)tempdata);
-			attrilen = *((int16_t*)tempdata + 1) - attrioffset;
+			attrioffset = sizeof(int16_t) * ((*(int16_t*)tempdata) + 1);
+			attrilen = *((int16_t*)((char*)tempdata + sizeof(int16_t) )) - attrioffset;
 		}else {
-			attrioffset = *((int16_t*)tempdata + attrioffset);
-			attrilen = *((int16_t*)tempdata + attrioffset + 1) - attrioffset;
+			attrioffset = *((int16_t*)((char*)tempdata + attriID[i]*sizeof(int16_t)));
+			attrilen = *((int16_t*)((char*)tempdata + (attriID[i] + 1)*sizeof(int16_t) )) - attrioffset;
 		}
 		if((recordDescriptor[attriID[i]]).type != 2){
 			memcpy((char*)data + outputoffset, (char*)tempdata + attrioffset, attrilen);
@@ -561,7 +553,6 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 			outputoffset += attrilen;
 		}
 	}
-	// TODO Remove test code
-	cout << "Get Next Record: " << ret << endl;
+
 	return ret;
 }
