@@ -392,6 +392,8 @@ RBFM_ScanIterator::RBFM_ScanIterator(){
 	this->attributenum = 0;
 	this->compOp = NO_OP;
 	this->type = 0;
+	this->rbfm = NULL;
+	this->value = NULL;
 }
 
 RBFM_ScanIterator::~RBFM_ScanIterator(){
