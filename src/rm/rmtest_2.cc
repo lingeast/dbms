@@ -141,15 +141,15 @@ void secA_11(const string &tableName, vector<RID> &rids, vector<int> &sizes)
 
     // Update the first 1000 tuples
     int size = 0;
-    for(int i = 0; i < 20; i++)
+    for(int i = 0; i < 44; i++)
     {
         memset(tuple, 0, 1000);
         RID rid = rids[i];
 
         prepareLargeTuple(i+10, tuple, &size);
         cout << "Update " << i << "th" << " record" << endl;
-        if (i == 8) {
-        	int k = 5;
+        if (i == 43) {
+        	int m = 0;
         }
         /*
         char buffer[2048];
@@ -168,7 +168,7 @@ void secA_11(const string &tableName, vector<RID> &rids, vector<int> &sizes)
     cout << "Updated!" << endl;
 
     // Read the recrods out and check integrity
-    for(int i = 0; i < 20; i++)
+    for(int i = 0; i < 44; i++)
     {
         memset(tuple, 0, 1000);
         memset(returnedData, 0, 1000);

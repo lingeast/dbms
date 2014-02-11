@@ -52,7 +52,7 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 	rid.slotNum = ph.insertRecord(newrecord, length, &newremain,0);
 	// if need reorganize
 	if (rid.slotNum == -1) {
-		this->reorganizePage(fileHandle,recordDescriptor,rid.pageNum);
+		ph.reorganizePage();
 		rid.slotNum = ph.insertRecord(newrecord, length, &newremain,0);
 	}
 	free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
@@ -207,7 +207,7 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
 		newrid.slotNum = Migph.insertRecord(newrecord, length, &newremain,1);
 		// if need reorganize
 		if (newrid.slotNum == -1) {
-			this->reorganizePage(fileHandle,recordDescriptor,newrid.pageNum);
+			Migph.reorganizePage();
 			newrid.slotNum = Migph.insertRecord(newrecord, length, &newremain,1);
 		}
 		free(newrecord);	// Add free() to free dynamic allocated memory, LYD JAN 24 2014
