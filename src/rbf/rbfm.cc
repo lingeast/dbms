@@ -438,12 +438,22 @@ void RBFM_ScanIterator::setIterator(FileHandle &fileHandle,
 }
 
 RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){
+	if (this->type == 2)
+		length = *(int32_t*)data2;
 	switch(this->compOp){
-	case 0: return memcmp(data1,data2,length);
+	case 0: {
+			switch(this->type){
+			case 0: return (*(int32_t*)data1 == *(int32_t*)data2);
+			case 1: return (*(float*)data1 == *(float*)data2);
+			case 2: return (memcmp(data1,(char*)data2 + sizeof(int32_t),length) == 0);
+			}
+			break;
+		}
 	case 1: {
 			switch(this->type){
 			case 0: return (*(int32_t*)data1 < *(int32_t*)data2);
 			case 1: return (*(float*)data1 < *(float*)data2);
+			case 2: return (memcmp(data1,(char*)data2 + sizeof(int32_t),length) < 0);
 			}
 			break;
 		}
@@ -451,6 +461,7 @@ RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){
 			switch(this->type){
 			case 0: return (*(int32_t*)data1 > *(int32_t*)data2);
 			case 1: return (*(float*)data1 > *(float*)data2);
+			case 2: return (memcmp(data1,(char*)data2 + sizeof(int32_t),length) > 0);
 			}
 			break;
 		}
@@ -458,6 +469,7 @@ RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){
 			switch(this->type){
 			case 0: return (*(int32_t*)data1 <= *(int32_t*)data2);
 			case 1: return (*(float*)data1 <= *(float*)data2);
+			case 2: return (memcmp(data1,(char*)data2 + sizeof(int32_t),length) <= 0);
 			}
 			break;
 		}
@@ -465,10 +477,18 @@ RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){
 			switch(this->type){
 			case 0: return (*(int32_t*)data1 >= *(int32_t*)data2);
 			case 1: return (*(float*)data1 >= *(float*)data2);
+			case 2: return (memcmp(data1,(char*)data2 + sizeof(int32_t),length) >= 0);
 			}
 			break;
 		}
-	case 5: return !memcmp(data1,data2,length);
+	case 5: {
+			switch(this->type){
+			case 0: return !(*(int32_t*)data1 == *(int32_t*)data2);
+			case 1: return !(*(float*)data1 == *(float*)data2);
+			case 2: return !(memcmp(data1,(char*)data2 + sizeof(int32_t),length) == 0);
+			}
+			break;
+		}
 	case 6: return 1;
 	}
 
