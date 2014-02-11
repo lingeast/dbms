@@ -106,6 +106,7 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 }
 
 int PageHandle::readRecord(const int slotnum, void* data){
+	if (slotnum >= *(rdh.slotSize())) return -2;
 	if (rdh[slotnum].occupy == -1) return -1;
 	if (rdh[slotnum].occupy == 0||rdh[slotnum].occupy == 3){
 		// copy the new address for the record
@@ -382,9 +383,9 @@ FileHandle::FileHandle() : file(NULL)
 
 FileHandle::~FileHandle()
 {
-	// Check if PagedFileManager forget to close the file
-	if (file != NULL)
-		fclose(file);
+	//Don't Check if PagedFileManager forget to close the file
+	//if (file != NULL)
+		//fclose(file);
 }
 
 int FileHandle::findfreePage(const int length, int* remain)

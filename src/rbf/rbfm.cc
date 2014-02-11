@@ -97,7 +97,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 		}
 		length = ph.readRecord(exactrid.slotNum, storedRecord);
 	}while(length == 0);
-	if (length == -1) return -1;
+	if (length < 0) return -1;
 	revertRecord(recordDescriptor,data,storedRecord);
 	free(storedRecord);
 
@@ -396,6 +396,10 @@ RBFM_ScanIterator::RBFM_ScanIterator(){
 
 RBFM_ScanIterator::~RBFM_ScanIterator(){
 
+}
+
+RC RBFM_ScanIterator::close() {
+	return rbfm->closeFile(fileHandle);
 }
 
 void RBFM_ScanIterator::setIterator(FileHandle &fileHandle,
