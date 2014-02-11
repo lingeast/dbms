@@ -86,6 +86,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 	}
 
 	// Insert into table.tbl
+	//cout << "Insert into table.tbl" << endl;
 	FileHandle tableT;
 	string defaultTable(TABLE_CATALOG);
 	if (rbfm->openFile(defaultTable, tableT) != 0) {	// table catalog does not exist
@@ -103,6 +104,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 
 
 	// Insert into column.tbl
+	//cout << "Insert into column.tbl" << endl;
 	FileHandle colT;
 	string defaultCol(COL_CATALOG);
 	if (rbfm->openFile(defaultCol, colT) != 0) {	// table catalog does not exist
@@ -153,21 +155,36 @@ int RelationManager::getTableColNum(const string &tableName) {
 		string tbllog(TABLE_CATALOG);
 		FileHandle tbllogF;
 		if (rbfm->openFile(tbllog, tbllogF) != 0) return -1;
-
+		/*
+		const string &tableName,
+		      const string &conditionAttribute,
+		      const CompOp compOp,
+		      const void *value,
+		      const vector<string> &attributeNames,
+		      RM_ScanIterator &rm_ScanIterator)
+		      */
 		RM_ScanIterator RM_tblit;
-		scan(string(TABLE_CATALOG),
-		      string("not used"),
-		      EQ_OP,
-		      NULL,
-		      vector<string>(),
-		      RM_tblit);
+		vector<string> attributeNames;
+		for (int i = 0; i < tblRecord.size(); i++)
+			attributeNames.push_back(tblRecord[i].name);
+
+		scan(string(TABLE_CATALOG),	//tableName
+		      string("not used"),	//conditionAttribute
+		      NO_OP,				// CompOp
+		      NULL,					// void* value
+		      attributeNames,	// vector<string>& attributeNames
+		      RM_tblit);			// rm_ScanIterator
 
 		char buffer[2000];
 		RID id;
 		int ret = 0;
 		char* cursor = buffer;
+
+		cout << "Get Next Tuples Now" << endl;
+
 		while((ret = RM_tblit.getNextTuple(id, buffer)) != RM_EOF) {
 			uint32_t* tableNameLen = (uint32_t*)(buffer + 0);
+			//cout << "tableNameSize" << *tableNameLen << endl;
 			if (*tableNameLen == tableName.size()) {
 				if (strncmp(tableName.c_str(), buffer + sizeof(int32_t), *tableNameLen) == 0)
 				{
@@ -210,7 +227,9 @@ int RelationManager::fillAttr(void* record, Attribute& attr) {
 
 RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &attrs)
 {
+	cout << "Try to get table column" << endl;
 	int attrSize = getTableColNum(tableName);
+	cout << "Table column: "<< attrSize << endl;
 	if (attrSize <= 0) return -1;
 
 	//cout << "Found matching table name in catalog, NUMCOL = " << attrSize << endl;

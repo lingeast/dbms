@@ -532,10 +532,18 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 		memcpy(attr,(char*)tempdata + attroffset,attrlen);
 		flag = this->compareRecord(attr,this->value,attrlen);
 	}
+	//TODO Remove Test Code
+	cout << "Should Return True:" << flag << endl;
+	for (int i = 0; i < attriID.size(); i++) {
+		cout << attriID[i] << ", " ;
+	}
+	cout << endl;
+	//TODO Test Code End
 	int outputoffset = 0;
 	for(int i = 0; i <= attriID.size(); i++){
 		int attrioffset = 0;
 		int attrilen = 0;
+		cout << "AttriID: " << attriID[i] << endl;
 		if(attriID[i] == 0){
 			attrioffset = sizeof(int16_t) * (*(int16_t*)tempdata);
 			attrilen = *((int16_t*)tempdata + 1) - attrioffset;
@@ -553,5 +561,7 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 			outputoffset += attrilen;
 		}
 	}
+	// TODO Remove test code
+	cout << "Get Next Record: " << ret << endl;
 	return ret;
 }
