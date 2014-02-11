@@ -511,7 +511,6 @@ int main()
 
     Tests();
 
-    getchar();
     return 0;
 }
 

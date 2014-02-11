@@ -175,6 +175,7 @@ RC PageHandle::reorganizePage(){
 			int fieldNum = *(int16_t*)(this->data + offset);
 			int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
 			memcpy((char*)newpage + ptr, data + offset , length);
+			rdh[slotnum].address = ptr;
 			memcpy((char*)newpage + slotptr, data + slotptr, sizeof(recordEntry));
 			ptr += length;
 			slotptr -= sizeof(recordEntry);
@@ -226,6 +227,7 @@ RC PageHandle::updateRecord(unsigned int slot, const void* data, unsigned int le
 			memcpy((char*)this->data + *rdh.free(),data,length);
 			rdh[slot].address = *rdh.free();
 			rdh[slot].length = length;
+			*rdh.free() += length;
 			remaining += (recordLen - length);
 			*newremain = remaining;
 			return 0;
@@ -237,9 +239,9 @@ RC PageHandle::updateRecord(unsigned int slot, const void* data, unsigned int le
 
 RC PageHandle::setMigrate(int slot, int migratePN, int migrateSl, int* newremain){
 	int offset = rdh[slot].address;
-	int fieldNum = *(int16_t*)(this->data + offset);
-	int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
-	remaining -= length;
+	int fieldNum = *((int16_t*)(this->data + offset));
+	int length = *((int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum));
+	remaining += length;
 	*newremain = remaining;
 	if (rdh[slot].occupy == 2) rdh[slot].occupy = 3;
 	else rdh[slot].occupy = 0;

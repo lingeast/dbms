@@ -141,12 +141,24 @@ void secA_11(const string &tableName, vector<RID> &rids, vector<int> &sizes)
 
     // Update the first 1000 tuples
     int size = 0;
-    for(int i = 0; i < 1000; i++)
+    for(int i = 0; i < 20; i++)
     {
         memset(tuple, 0, 1000);
         RID rid = rids[i];
 
         prepareLargeTuple(i+10, tuple, &size);
+        cout << "Update " << i << "th" << " record" << endl;
+        if (i == 8) {
+        	int k = 5;
+        }
+        /*
+        char buffer[2048];
+        vector<Attribute> rec;
+
+        rm->readTuple(tableName, rid, buffer);
+        rm->getAttributes(tableName, rec);
+        rm->rbfm->printRecord(rec, buffer);
+        */
         rc = rm->updateTuple(tableName, tuple, rid);
         assert(rc == success);
 
@@ -156,11 +168,15 @@ void secA_11(const string &tableName, vector<RID> &rids, vector<int> &sizes)
     cout << "Updated!" << endl;
 
     // Read the recrods out and check integrity
-    for(int i = 0; i < 1000; i++)
+    for(int i = 0; i < 20; i++)
     {
         memset(tuple, 0, 1000);
         memset(returnedData, 0, 1000);
         prepareLargeTuple(i+10, tuple, &size);
+        cout << "Check " << i << "th" << "record" << endl;
+        if (i == 17) {
+        	int k = 6;
+        }
         rc = rm->readTuple(tableName, rids[i], returnedData);
         assert(rc == success);
 

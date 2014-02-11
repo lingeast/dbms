@@ -91,8 +91,8 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 	do{
 		// find the exact the record place
 		if (length == 0){
-			exactrid.pageNum = *((int32_t*) data);
-			exactrid.slotNum = *((int16_t*)data + sizeof(int32_t)/sizeof(int16_t));
+			exactrid.pageNum = *((int32_t*) storedRecord);
+			exactrid.slotNum = *((int16_t*) storedRecord + sizeof(int32_t)/sizeof(int16_t));
 			ph.loadPage(exactrid.pageNum,fileHandle);
 		}
 		length = ph.readRecord(exactrid.slotNum, storedRecord);
@@ -232,6 +232,7 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
 	}
 	if (result == 3){
 		//need reorganize
+		cout << "Page:" << exactrid.pageNum << "Slot: " << exactrid.slotNum << " cause reorganized "<<endl;
 		ph.reorganizePage();
 		ph.updateRecord(exactrid.slotNum,newrecord,length,&newremain,&exactrid.pageNum,&exactrid.slotNum);
 		try{

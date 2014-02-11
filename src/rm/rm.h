@@ -169,13 +169,14 @@ private:
 	vector<Attribute> tblRecord;
 	vector<Attribute> colRecord;
 	string TBL_T_SYSTEM; // table type system
-	RecordBasedFileManager* rbfm;
+
 	int getTableColNum(const string &tableName);
 	/*
 	 * return value: the column position of this attribute
 	 */
 	int fillAttr(void* record, Attribute& attr);
 public:
+RecordBasedFileManager* rbfm;
   static RelationManager* instance();
 
   RC createTable(const string &tableName, const vector<Attribute> &attrs);
