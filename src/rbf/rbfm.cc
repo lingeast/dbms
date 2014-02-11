@@ -389,7 +389,9 @@ RC RecordBasedFileManager::scan(FileHandle &fileHandle,
 }
 
 RBFM_ScanIterator::RBFM_ScanIterator(){
-
+	this->attributenum = 0;
+	this->compOp = NO_OP;
+	this->type = 0;
 }
 
 RBFM_ScanIterator::~RBFM_ScanIterator(){
@@ -414,49 +416,138 @@ void RBFM_ScanIterator::setIterator(FileHandle &fileHandle,
 	this->currentRID.pageNum = 0;
 	this->currentRID.slotNum = 0;
 	this->rbfm = rbfm;
+	for (int j = 0 ; j < attributeNames.size() ; j++ ){
+		for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
+			if (attributeNames[j] == (recordDescriptor[i]).name){
+				this->attriID.push_back(j);
+				break;
+			}
+		}
+	}
+	for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
+		if ((recordDescriptor[i]).name == conditionAttribute){
+			attributenum = i;
+			type = (recordDescriptor[i]).type;
+			break;
+		}
+	}
+}
+
+RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){
+	switch(this->compOp){
+	case 0: return memcmp(data1,data2,length);
+	case 1: {
+			switch(this->type){
+			case 0: return (*(int32_t*)data1 < *(int32_t*)data2);
+			case 1: return (*(float*)data1 < *(float*)data2);
+			}
+			break;
+		}
+	case 2: {
+			switch(this->type){
+			case 0: return (*(int32_t*)data1 > *(int32_t*)data2);
+			case 1: return (*(float*)data1 > *(float*)data2);
+			}
+			break;
+		}
+	case 3: {
+			switch(this->type){
+			case 0: return (*(int32_t*)data1 <= *(int32_t*)data2);
+			case 1: return (*(float*)data1 <= *(float*)data2);
+			}
+			break;
+		}
+	case 4: {
+			switch(this->type){
+			case 0: return (*(int32_t*)data1 >= *(int32_t*)data2);
+			case 1: return (*(float*)data1 >= *(float*)data2);
+			}
+			break;
+		}
+	case 5: return !memcmp(data1,data2,length);
+	case 6: return 1;
+	}
+
+	return 0;
 }
 
 RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 	void* tempdata = malloc(PAGE_SIZE);
-	RC ret = ph.readNextRecord(&currentRID.slotNum, tempdata);
-	if (ret == 0){
-		rbfm->revertRecord(recordDescriptor,data,tempdata);
-		rid.slotNum = currentRID.slotNum;
-		rid.pageNum = currentRID.pageNum;
-		currentRID.slotNum ++;
-		return 0;
-	}else
-	if (ret == 2){
-		// find real record
-		rbfm->readRecord(fileHandle,recordDescriptor,currentRID,tempdata);
-		rbfm->revertRecord(recordDescriptor,data,tempdata);
-		rid.slotNum = currentRID.slotNum;
-		rid.pageNum = currentRID.pageNum;
-		currentRID.slotNum ++;
-		return 0;
-	}else
-	while(1){
-		// read newpage
-		currentRID.pageNum ++;
-		currentRID.slotNum = 0;
-		if (ph.loadPage(currentRID.pageNum, fileHandle) == -1) return RBFM_EOF;
+	RC ret = -1;
+	int flag = 0;
+	while (flag == 0)
+	{
 		ret = ph.readNextRecord(&currentRID.slotNum, tempdata);
 		if (ret == 0){
-			rbfm->revertRecord(recordDescriptor,data,tempdata);
+			//rbfm->revertRecord(recordDescriptor,data,tempdata);
 			rid.slotNum = currentRID.slotNum;
 			rid.pageNum = currentRID.pageNum;
 			currentRID.slotNum ++;
-			return 0;
 		}else
 		if (ret == 2){
-			// find real record
+		// find real record
 			rbfm->readRecord(fileHandle,recordDescriptor,currentRID,tempdata);
-			rbfm->revertRecord(recordDescriptor,data,tempdata);
+			//rbfm->revertRecord(recordDescriptor,data,tempdata);
 			rid.slotNum = currentRID.slotNum;
 			rid.pageNum = currentRID.pageNum;
 			currentRID.slotNum ++;
-			return 0;
+		}else
+		while(1){
+			// read newpage
+			currentRID.pageNum ++;
+			currentRID.slotNum = 0;
+			if (ph.loadPage(currentRID.pageNum, fileHandle) == -1) return RBFM_EOF;
+			ret = ph.readNextRecord(&currentRID.slotNum, tempdata);
+			if (ret == 0){
+				//rbfm->revertRecord(recordDescriptor,data,tempdata);
+				rid.slotNum = currentRID.slotNum;
+				rid.pageNum = currentRID.pageNum;
+				currentRID.slotNum ++;
+			}else
+			if (ret == 2){
+				// find real record
+				rbfm->readRecord(fileHandle,recordDescriptor,currentRID,tempdata);
+				//rbfm->revertRecord(recordDescriptor,data,tempdata);
+				rid.slotNum = currentRID.slotNum;
+				rid.pageNum = currentRID.pageNum;
+				currentRID.slotNum ++;
+			}
+		}
+		int attroffset = 0;
+		int attrlen = 0;
+		if (this->attributenum == 0) {
+			attroffset = sizeof(int16_t) * (*(int16_t*)tempdata);
+			attrlen = *((int16_t*)tempdata + 1) - attroffset;
+		}
+		else {
+			attroffset = *((int16_t*)tempdata + attroffset);
+			attrlen = *((int16_t*)tempdata + attroffset + 1) - attroffset;
+		}
+
+		void* attr = malloc(attrlen);
+		memcpy(attr,(char*)tempdata + attroffset,attrlen);
+		flag = this->compareRecord(attr,this->value,attrlen);
+	}
+	int outputoffset = 0;
+	for(int i = 0; i <= attriID.size(); i++){
+		int attrioffset = 0;
+		int attrilen = 0;
+		if(attriID[i] == 0){
+			attrioffset = sizeof(int16_t) * (*(int16_t*)tempdata);
+			attrilen = *((int16_t*)tempdata + 1) - attrioffset;
+		}else {
+			attrioffset = *((int16_t*)tempdata + attrioffset);
+			attrilen = *((int16_t*)tempdata + attrioffset + 1) - attrioffset;
+		}
+		if((recordDescriptor[attriID[i]]).type != 2){
+			memcpy((char*)data + outputoffset, (char*)tempdata + attrioffset, attrilen);
+			outputoffset += attrilen;
+		}else {
+			memcpy((char*)data + outputoffset,&attrilen, sizeof(int32_t));
+			outputoffset += sizeof(int32_t);
+			memcpy((char*)data + outputoffset, (char*)tempdata + attrioffset, attrilen);
+			outputoffset += attrilen;
 		}
 	}
-	return RBFM_EOF;
+	return ret;
 }

@@ -72,6 +72,10 @@ private:
 	RID currentRID;
 	PageHandle ph;
 
+	int attributenum;
+	int type;
+	vector<int> attriID;
+
 public:
   RBFM_ScanIterator();
   ~RBFM_ScanIterator();
@@ -87,6 +91,7 @@ public:
 
   // "data" follows the same format as RecordBasedFileManager::insertRecord()
   RC getNextRecord(RID &rid, void *data);
+  RC compareRecord(void *data1, const void *data2, int length);
   RC close() { return -1; };
 };
 
