@@ -205,11 +205,7 @@ void secA_12(const string &tableName, const vector<RID> &rids)
     // Delete the first 1000 tuples
     for(int i = 0; i < 1000; i++)
     {
-    	if (i < 6) {
-    		;//continue;
-    	} else {
-    		int k = 8;
-    	}
+
         rc = rm->deleteTuple(tableName, rids[i]);
         if (rc != 0) { cout << "i = " << i << endl;}
         assert(rc == success);

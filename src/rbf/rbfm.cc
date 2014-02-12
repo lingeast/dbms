@@ -574,8 +574,8 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 			attrlen = *((int16_t*)tempdata + 1) - attroffset;
 		}
 		else {
-			attroffset = *((int16_t*)tempdata + attroffset);
-			attrlen = *((int16_t*)tempdata + attroffset + 1) - attroffset;
+			attroffset = *((int16_t*)tempdata + attributenum);
+			attrlen = *((int16_t*)tempdata + attributenum + 1) - attroffset;
 		}
 		void* attr = malloc(attrlen);
 		memcpy(attr,(char*)tempdata + attroffset,attrlen);

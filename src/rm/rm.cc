@@ -313,7 +313,7 @@ int RelationManager::fillAttr(void* record, Attribute& attr) {
 RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &attrs)
 {
 	int attrSize = getTableColNum(tableName);
-	//cout << "Table column: "<< attrSize << endl;
+	//cout << "Table "<< tableName << "colNum: "<< attrSize << endl;
 	if (attrSize <= 0) return -1;
 
 	//cout << "Found matching table name in catalog, NUMCOL = " << attrSize << endl;
