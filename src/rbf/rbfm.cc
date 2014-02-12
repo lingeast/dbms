@@ -32,10 +32,12 @@ RC RecordBasedFileManager::destroyFile(const string &fileName) {
 }
 
 RC RecordBasedFileManager::openFile(const string &fileName, FileHandle &fileHandle) {
+	//cout << "Open a file" << endl;
 	return PagedFileManager::instance()->openFile(fileName.c_str(),fileHandle);
 }
 
 RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
+	//cout << "Close a file" << endl;
     return PagedFileManager::instance()->closeFile(fileHandle);
 }
 
@@ -143,6 +145,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 
 RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid){
 	PageHandle ph(rid.pageNum,fileHandle);
+	RID prevrid = rid;
 	RID exactrid = rid;
 	RC result;
 	int newremain = 0;
@@ -151,13 +154,14 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
 	while(result == 1){
 		try{
 				// write back page and page remaining info
-				fileHandle.writePage(exactrid.pageNum, ph.dataBlock());
+				fileHandle.writePage(prevrid.pageNum, ph.dataBlock());
 				//fileHandle.setNewremain(rid.pageNum,newremain);
 			}catch(const std::exception &e){
 				std::cout<< e.what() << std::endl;
 				return -1;
 		}
 
+		prevrid = exactrid;
 		// delete the migrate record recursively
 		ph.loadPage(exactrid.pageNum,fileHandle);
 		result = ph.deleteRecord(&exactrid.slotNum, &exactrid.pageNum, &newremain);

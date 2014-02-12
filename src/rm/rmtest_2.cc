@@ -141,16 +141,14 @@ void secA_11(const string &tableName, vector<RID> &rids, vector<int> &sizes)
 
     // Update the first 1000 tuples
     int size = 0;
-    for(int i = 0; i < 44; i++)
+    for(int i = 0; i < 1000; i++)
     {
         memset(tuple, 0, 1000);
         RID rid = rids[i];
 
         prepareLargeTuple(i+10, tuple, &size);
         cout << "Update " << i << "th" << " record" << endl;
-        if (i == 43) {
-        	int m = 0;
-        }
+
         /*
         char buffer[2048];
         vector<Attribute> rec;
@@ -168,14 +166,15 @@ void secA_11(const string &tableName, vector<RID> &rids, vector<int> &sizes)
     cout << "Updated!" << endl;
 
     // Read the recrods out and check integrity
-    for(int i = 0; i < 44; i++)
+    for(int i = 0; i < 1000; i++)
     {
         memset(tuple, 0, 1000);
         memset(returnedData, 0, 1000);
         prepareLargeTuple(i+10, tuple, &size);
         cout << "Check " << i << "th" << "record" << endl;
-        if (i == 17) {
-        	int k = 6;
+        if (i == 41) {
+        	int m = 0;
+        	//continue;
         }
         rc = rm->readTuple(tableName, rids[i], returnedData);
         assert(rc == success);
@@ -206,7 +205,13 @@ void secA_12(const string &tableName, const vector<RID> &rids)
     // Delete the first 1000 tuples
     for(int i = 0; i < 1000; i++)
     {
+    	if (i < 6) {
+    		;//continue;
+    	} else {
+    		int k = 8;
+    	}
         rc = rm->deleteTuple(tableName, rids[i]);
+        if (rc != 0) { cout << "i = " << i << endl;}
         assert(rc == success);
 
         rc = rm->readTuple(tableName, rids[i], returnedData);

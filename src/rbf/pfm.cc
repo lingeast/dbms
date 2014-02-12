@@ -156,7 +156,7 @@ RC PageHandle::deleteRecord(unsigned int* slot, unsigned int* pagenum, int* newr
 	}
 	if (rdh[*slot].occupy == 1 || rdh[*slot].occupy == 2 ){
 		rdh[*slot].occupy = -1;
-		remaining -= rdh[*slot].length;
+		remaining += rdh[*slot].length;
 		*newremain = remaining;
 		return 0;
 	}
@@ -175,7 +175,11 @@ RC PageHandle::reorganizePage(){
 			int fieldNum = *(int16_t*)(this->data + offset);
 			int length = *(int16_t*)(this->data + offset + sizeof(uint16_t) * fieldNum);
 			memcpy((char*)newpage + ptr, data + offset , length);
+
+			//Update recordEntry
 			rdh[slotnum].address = ptr;
+			rdh[slotnum].length = length;
+
 			memcpy((char*)newpage + slotptr, data + slotptr, sizeof(recordEntry));
 			ptr += length;
 			slotptr -= sizeof(recordEntry);
@@ -338,6 +342,7 @@ RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 		return -1;
 	}
 
+
 	int fileNo = fileno(file);
 	assert(fileNo != -1);
 	std::map<int, fileInfo>::iterator it = fileMap.find(fileNo);
@@ -373,6 +378,7 @@ RC PagedFileManager::closeFile(FileHandle &fileHandle)
 		if (--it->second.count == 0) {	// No fileHandle is using this stream
 			ret = fclose(it->second.stream);
 			fileMap.erase(it);
+			//std::cout << "Reduce file ptr to " << fileMap.size() << std::endl;
 		}
 	}
 	fileHandle.setFile(NULL);
@@ -438,6 +444,8 @@ void FileHandle::writePageBlock(size_t offset, const void *data) {
 	moveCursor(offset);
 	if(1 != fwrite(data, PAGE_SIZE, 1, file))
 		throw std::runtime_error("FileHandle: Write page block failed.");
+	//if (fflush(file) != 0)
+		//throw std::runtime_error("FileHandle: Flush buffer failed.");
 }
 
 void FileHandle::writeDirBlock(size_t offset, PageDirHandle pdh) {
@@ -445,6 +453,8 @@ void FileHandle::writeDirBlock(size_t offset, PageDirHandle pdh) {
 	moveCursor(offset);
 	if( 1 != fwrite(pdh.dataBlock(), sizeof(pageDir), 1, file))
 		throw std::runtime_error("FileHandle: Write dirblock failed.");
+	//if (fflush(file) != 0)
+		//throw std::runtime_error("FileHandle: Flush buffer failed.");
 
 }
 

@@ -236,7 +236,11 @@ int RelationManager::getTableColNum(const string &tableName) {
 	//RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
 		string tbllog(TABLE_CATALOG);
 		FileHandle tbllogF;
-		if (rbfm->openFile(tbllog, tbllogF) != 0) return -1;
+		if (rbfm->openFile(tbllog, tbllogF) != 0) {
+			return -1;
+		} else {
+			rbfm->closeFile(tbllogF);
+		}
 		/*
 		const string &tableName,
 		      const string &conditionAttribute,
@@ -274,6 +278,7 @@ int RelationManager::getTableColNum(const string &tableName) {
 				}
 			}
 		}
+
 		RM_tblit.close();
 		if (cursor == buffer) return -1;
 		else return (int) *((uint32_t*)cursor);
@@ -396,8 +401,10 @@ RC RelationManager::deleteTuple(const string &tableName, const RID &rid)
 {
 	FileHandle tableF;
 	if (rbfm->openFile(tableName + TABLE_SUFFIX, tableF) != 0) return -1;
-	vector<Attribute> recDscptr; // Not used!
-	int ret = rbfm->deleteRecord(tableF, recDscptr, rid);
+	//vector<Attribute> recDscptr; // Not used!
+
+	int ret = rbfm->deleteRecord(tableF, vector<Attribute>(), rid);
+
 	if (rbfm->closeFile(tableF) != 0) return -1;
 	return ret;
 }
@@ -512,9 +519,14 @@ RC RelationManager::scan(const string &tableName,
     	recDscptr = tblRecord;
     	FileHandle fh;
     	//RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
-    	if (rbfm->openFile(tableName, fh) != 0) return -1;
+    	if (rbfm->openFile(tableName, fh) != 0){
+    		cout << "Open TABLE_CATALOG failed" << endl;
+    		return -1;
+    	}
     	rm_ScanIterator.setIterator(fh, recDscptr, conditionAttribute,
     			compOp, value, attributeNames, rbfm);
+
+    	//return rbfm->closeFile(fh);
     	return 0;
     }
     if (tableName.compare(COL_CATALOG) == 0) {
@@ -524,6 +536,8 @@ RC RelationManager::scan(const string &tableName,
     	if (rbfm->openFile(tableName, fh) != 0) return -1;
     	rm_ScanIterator.setIterator(fh, recDscptr, conditionAttribute,
     	    			compOp, value, attributeNames, rbfm);
+
+    	//return rbfm->closeFile(fh);
     	return 0;
     }
 

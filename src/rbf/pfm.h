@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <map>
+#include <string>
 
 typedef int RC;
 typedef unsigned PageNum;
@@ -173,6 +174,7 @@ class FileHandle
 
 private:
 	FILE* file;
+	//string fileName;
 	void readPageBlock(size_t offset, void* data);	// Read page from file[offset] to data
 	void writePageBlock(size_t offset, const void *data);	// Write page data to file[offset]
 	void writeDirBlock(size_t offset, PageDirHandle pdh); // Write Directory info pdh to file[offset]
