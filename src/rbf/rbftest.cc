@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdexcept>
 #include <stdio.h> 
+#include <sys/resource.h>
 
 #include "pfm.h"
 #include "rbfm.h"
@@ -14,6 +15,13 @@ using namespace std;
 
 const int success = 0;
 
+void memProfile()
+{
+    int who = RUSAGE_SELF;
+    struct rusage usage;
+    getrusage(who,&usage);
+    cout<<usage.ru_ixrss<<"KB"<<endl;
+}
 
 // Check if a file exists
 bool FileExists(string fileName)
@@ -727,6 +735,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
 
 int main()
 {
+	memProfile();
     PagedFileManager *pfm = PagedFileManager::instance(); // To test the functionality of the paged file manager
     RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); // To test the functionality of the record-based file manager
     
@@ -736,19 +745,31 @@ int main()
     remove("test_3");
     remove("test_4");
     
+    memProfile();
     RBFTest_1(pfm);
-    RBFTest_2(pfm); 
+    memProfile();
+
+    RBFTest_2(pfm);
+    memProfile();
     RBFTest_3(pfm);
+    memProfile();
     RBFTest_4(pfm);
-    RBFTest_5(pfm); 
+    memProfile();
+    RBFTest_5(pfm);
+    memProfile();
     RBFTest_6(pfm);
+    memProfile();
     RBFTest_7(pfm);
+    memProfile();
     RBFTest_8(rbfm);
+    memProfile();
     
     vector<RID> rids;
     vector<int> sizes;
     RBFTest_9(rbfm, rids, sizes);
+    memProfile();
     RBFTest_10(rbfm, rids, sizes);
+    memProfile();
      
     return 0;
 }

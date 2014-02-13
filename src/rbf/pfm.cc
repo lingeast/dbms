@@ -93,7 +93,7 @@ unsigned PageHandle::insertRecord(const void* data, unsigned int length, int* ne
 	}
 	// calculate the continuous free space
 	int remain = PAGE_SIZE - *rdh.free() - 2 * sizeof(int16_t) - sizeof(recordEntry) * (*rdh.slotSize());
-	if (remain < length + sizeof(recordEntry)) return -1;
+	if (remain < (int)length + sizeof(recordEntry)) return -1;
 	(*rdh.slotSize())++;
 	rdh[*rdh.slotSize() - 1].address = *(rdh.free());
 	rdh[*rdh.slotSize() - 1].length = length;
@@ -200,6 +200,8 @@ RC PageHandle::reorganizePage(){
 	memcpy((int16_t*)newpage + PAGE_SIZE/sizeof(int16_t) - 2, &ptr, sizeof(int16_t));
 	memcpy(data, newpage, PAGE_SIZE);
 	// return the newremain byte in the page
+
+	free(newpage);
 	return (slotptr - ptr + sizeof(recordEntry));
 }
 
@@ -422,6 +424,7 @@ int FileHandle::findfreePage(const int length, int* remain)
 	*((int16_t*)newpage+PAGE_SIZE/sizeof(int16_t)-2) = 0;
 	if (appendPage(newpage) != 0) return -1;
 	*remain = PAGE_SIZE - 2 * sizeof(int16_t);
+	free(newpage);
 	return pageNum;
 }
 

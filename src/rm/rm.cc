@@ -98,7 +98,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 
 	tableRecord tr(tableName, this->TBL_T_SYSTEM, attrs);
 	RID tableID;
-	rbfm->printRecord(this->tblRecord, tr.recordData());
+	//rbfm->printRecord(this->tblRecord, tr.recordData());
 	if (rbfm->insertRecord(tableT, this->tblRecord, tr.recordData(), tableID) != 0) return -1;
 	if (rbfm->closeFile(tableT) != 0) return -1;
 
@@ -116,7 +116,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 	for (unsigned int i = 0; i < attrs.size(); i++) {
 		RID recordID;
 		columnRecord cr(tableName, attrs[i], i);
-		rbfm->printRecord(this->colRecord, cr.recordData());
+		//rbfm->printRecord(this->colRecord, cr.recordData());
 		if (rbfm->insertRecord(colT, this->colRecord, cr.recordData(), recordID) != 0) return -1;
 	}
 	// TODO : remove test code
@@ -210,7 +210,7 @@ RC RelationManager::deleteTable(const string &tableName)
 	RID tmprid;
 	//cout << "Scan Column Table..." << endl;
 
-	uint32_t buffer;
+	//uint32_t buffer;
 	while(RM_colit.getNextTuple(tmprid, NULL) != EOF) {
 		colRID.push_back(tmprid);
 	}

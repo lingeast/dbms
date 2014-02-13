@@ -147,7 +147,7 @@ void secA_11(const string &tableName, vector<RID> &rids, vector<int> &sizes)
         RID rid = rids[i];
 
         prepareLargeTuple(i+10, tuple, &size);
-        cout << "Update " << i << "th" << " record" << endl;
+        //cout << "Update " << i << "th" << " record" << endl;
 
         /*
         char buffer[2048];
@@ -171,11 +171,8 @@ void secA_11(const string &tableName, vector<RID> &rids, vector<int> &sizes)
         memset(tuple, 0, 1000);
         memset(returnedData, 0, 1000);
         prepareLargeTuple(i+10, tuple, &size);
-        cout << "Check " << i << "th" << "record" << endl;
-        if (i == 41) {
-        	int m = 0;
-        	//continue;
-        }
+        //cout << "Check " << i << "th" << "record" << endl;
+
         rc = rm->readTuple(tableName, rids[i], returnedData);
         assert(rc == success);
 
@@ -352,6 +349,7 @@ void secA_15(const string &tableName) {
         cout << "Age: " << *(int *)returnedData << endl;
         assert ( (*(int *) returnedData) > ageVal );
     }
+
     rmsi.close();
     
     // Deleta Table
@@ -363,13 +361,13 @@ void secA_15(const string &tableName) {
     {
         free(tuples[i]);
     }
-    
     cout << "****Test case 15 passed****" << endl << endl;
 }
 
 
 void Tests()
 {
+	memProfile();
     // Simple Scan
     secA_8_B("tbl_employee3");
 

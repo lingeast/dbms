@@ -1,5 +1,6 @@
 
 #include "rbfm.h"
+#include <cassert>
 
 
 RecordBasedFileManager* RecordBasedFileManager::_rbf_manager = 0;
@@ -47,8 +48,19 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 	void* newrecord = buildRecord(recordDescriptor, data, &length);
 	// find page to insert the record
 	int newremain = 0;
-	rid.pageNum = fileHandle.findfreePage(length, &newremain);
-	if (rid.pageNum == -1) {free(newrecord);return -1;};
+
+
+	int ret = fileHandle.findfreePage(length, &newremain);
+	if (ret == -1) {free(newrecord);return -1;};
+	rid.pageNum  = ret;
+	/*
+	if (fileHandle.findfreePage(length, &newremain) == -1) {
+		assert(false);
+		free(newrecord);
+		return -1;
+	}
+	*/
+
 	PageHandle ph(rid.pageNum, fileHandle);
 	// insertRecord to target page
 	rid.slotNum = ph.insertRecord(newrecord, length, &newremain,0);
@@ -99,7 +111,10 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 		}
 		length = ph.readRecord(exactrid.slotNum, storedRecord);
 	}while(length == 0);
-	if (length < 0) return -1;
+	if (length < 0){
+		free(storedRecord);
+		return -1;
+	}
 	revertRecord(recordDescriptor,data,storedRecord);
 	free(storedRecord);
 
@@ -211,6 +226,7 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
 		newrid.slotNum = Migph.insertRecord(newrecord, length, &newremain,1);
 		// if need reorganize
 		if (newrid.slotNum == -1) {
+			assert(false);
 			Migph.reorganizePage();
 			newrid.slotNum = Migph.insertRecord(newrecord, length, &newremain,1);
 		}
@@ -236,7 +252,7 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
 	}
 	if (result == 3){
 		//need reorganize
-		cout << "Page:" << exactrid.pageNum << "Slot: " << exactrid.slotNum << " cause reorganized "<<endl;
+		//cout << "Page:" << exactrid.pageNum << "Slot: " << exactrid.slotNum << " cause reorganized "<<endl;
 		ph.reorganizePage();
 		ph.updateRecord(exactrid.slotNum,newrecord,length,&newremain,&exactrid.pageNum,&exactrid.slotNum);
 		try{
@@ -281,7 +297,7 @@ RC RecordBasedFileManager::reorganizePage(FileHandle &fileHandle, const vector<A
 	PageHandle ph(pageNumber,fileHandle);
 	int32_t newremain = 0;
 	newremain = ph.reorganizePage();
-	cout<<"test1"<<endl;
+	//cout<<"test1"<<endl;
 	try{
 		// write back page and page remaining info
 			fileHandle.writePage(pageNumber, ph.dataBlock());
