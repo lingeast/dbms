@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdexcept>
 #include <stdio.h> 
-#include <sys/resource.h>
 
 #include "pfm.h"
 #include "rbfm.h"
@@ -15,13 +14,6 @@ using namespace std;
 
 const int success = 0;
 
-void memProfile()
-{
-    int who = RUSAGE_SELF;
-    struct rusage usage;
-    getrusage(who,&usage);
-    cout<<usage.ru_ixrss<<"KB"<<endl;
-}
 
 // Check if a file exists
 bool FileExists(string fileName)
@@ -640,8 +632,8 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         int size = 0;
         memset(record, 0, 1000);
         prepareLargeRecord(i, record, &size);
+
         rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
-        cout<<"page id: "<<rid.pageNum<<" slot num: "<<rid.slotNum<<endl;
         assert(rc == success);
 
         rids.push_back(rid);
@@ -679,26 +671,17 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
 
     vector<Attribute> recordDescriptor;
     createLargeRecordDescriptor(recordDescriptor);
-    rbfm->reorganizePage(fileHandle,recordDescriptor,0);
-    RBFM_ScanIterator testIterator;
-    string temp1;
-    void* temp2 = malloc(10);
-    vector<string> temp3;
-    CompOp test4 = LT_OP;
-    testIterator.setIterator(fileHandle,recordDescriptor,temp1,test4,temp2,temp3,rbfm);
-    RID iterRID;
-    iterRID.pageNum=0;iterRID.slotNum=0;
-
+    
     for(int i = 0; i < numRecords; i++)
     {
         memset(record, 0, 1000);
         memset(returnedData, 0, 1000);
-
-        //testIterator.getNextRecord(iterRID,returnedData);
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
         assert(rc == success);
+        
         cout << "Returned Data:" << endl;
-        //rbfm->printRecord(recordDescriptor, returnedData);
+        rbfm->printRecord(recordDescriptor, returnedData);
+
         int size = 0;
         prepareLargeRecord(i, record, &size);
         if(memcmp(returnedData, record, sizes[i]) != 0)
@@ -735,7 +718,6 @@ int RBFTest_10(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &siz
 
 int main()
 {
-	memProfile();
     PagedFileManager *pfm = PagedFileManager::instance(); // To test the functionality of the paged file manager
     RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); // To test the functionality of the record-based file manager
     
@@ -745,31 +727,19 @@ int main()
     remove("test_3");
     remove("test_4");
     
-    memProfile();
     RBFTest_1(pfm);
-    memProfile();
-
-    RBFTest_2(pfm);
-    memProfile();
+    RBFTest_2(pfm); 
     RBFTest_3(pfm);
-    memProfile();
     RBFTest_4(pfm);
-    memProfile();
-    RBFTest_5(pfm);
-    memProfile();
+    RBFTest_5(pfm); 
     RBFTest_6(pfm);
-    memProfile();
     RBFTest_7(pfm);
-    memProfile();
     RBFTest_8(rbfm);
-    memProfile();
     
     vector<RID> rids;
     vector<int> sizes;
     RBFTest_9(rbfm, rids, sizes);
-    memProfile();
     RBFTest_10(rbfm, rids, sizes);
-    memProfile();
      
     return 0;
 }
