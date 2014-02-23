@@ -7,6 +7,8 @@
 #include <map>
 #include <string>
 
+using std::string;
+
 typedef int RC;
 typedef unsigned PageNum;
 
@@ -166,7 +168,7 @@ protected:
 
 private:
     static PagedFileManager *_pf_manager;
-    std::map<int, fileInfo> fileMap;
+    std::map<string, fileInfo> fileMap;
 };
 
 class FileHandle
@@ -174,7 +176,7 @@ class FileHandle
 
 private:
 	FILE* file;
-	//string fileName;
+	string fileName;
 	void readPageBlock(size_t offset, void* data);	// Read page from file[offset] to data
 	void writePageBlock(size_t offset, const void *data);	// Write page data to file[offset]
 	void writeDirBlock(size_t offset, PageDirHandle pdh); // Write Directory info pdh to file[offset]
@@ -184,8 +186,11 @@ public:
     FileHandle();                                                    // Default constructor
     ~FileHandle();                                                   // Destructor
 
+    FileHandle& operator=(const FileHandle& that);
     FILE* getFile() const {return file;}									// file instance getter
     void setFile(FILE * that) {file = that;}						// file setter
+    const string& getFileName() const {return fileName;}					// filename getter
+    void setFileName(const string& fName) { fileName = fName;}
     RC readPage(PageNum pageNum, void *data);                           // Get a specific page
     RC writePage(PageNum pageNum, const void *data);                    // Write a specific page
     RC appendPage(const void *data);                                    // Append a specific page

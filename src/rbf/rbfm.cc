@@ -226,7 +226,7 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
 		newrid.slotNum = Migph.insertRecord(newrecord, length, &newremain,1);
 		// if need reorganize
 		if (newrid.slotNum == -1) {
-			assert(false);
+			//assert(false);
 			Migph.reorganizePage();
 			newrid.slotNum = Migph.insertRecord(newrecord, length, &newremain,1);
 		}

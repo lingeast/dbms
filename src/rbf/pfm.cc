@@ -322,9 +322,10 @@ RC PagedFileManager::createFile(const char *fileName)
 RC PagedFileManager::destroyFile(const char *fileName)
 {
 	FILE* file = fopen(fileName, "r");
-	if (file == NULL) return -1;
+	if (file == NULL) return -1;	// No such file
+	else fclose(file);
 
-	std::map<int, fileInfo>::iterator it = fileMap.find(fileno(file));
+	std::map<string, fileInfo>::iterator it = fileMap.find(string(fileName));
 	if (it != fileMap.end()) {	// Destroy an opened file
 		return -1;
 	}
@@ -334,25 +335,24 @@ RC PagedFileManager::destroyFile(const char *fileName)
 
 RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 {
-	FILE* file;
-	file = fopen(fileName, "r+b");
-
-	if (file == NULL)	// if file does not exist
-		return -1;
-
 	if (fileHandle.getFile() != NULL) {	// fileHandle already points to a file
 		return -1;
 	}
 
+	FILE* file = fopen(fileName, "r+b");
 
-	int fileNo = fileno(file);
-	assert(fileNo != -1);
-	std::map<int, fileInfo>::iterator it = fileMap.find(fileNo);
+	if (file == NULL)	// if file does not exist
+		return -1;
+
+	string fileNo(fileName);
+	std::map<string, fileInfo>::iterator it = fileMap.find(fileNo);
+	fileHandle.setFileName(fileNo);
 	if (it == fileMap.end()) {	// open a new file
 		fileInfo fi;
 		fi.stream = file;
 		fi.count = 1;
-		fileMap.insert(std::pair<int, fileInfo> (fileNo, fi));
+		fileMap.insert(std::pair<string, fileInfo> (fileNo, fi));
+		//std::cout << "Put " << fileNo << " into map" << std::endl;
 	} else {	// the file opened is already opened by another FileHandle
 		it->second.count++;	// incre ref count
 		fclose(file);	// close the file stream we don't use
@@ -368,13 +368,13 @@ RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 RC PagedFileManager::closeFile(FileHandle &fileHandle)
 {
 	if (fileHandle.getFile() == NULL) return -1;
-	int fileNo = fileno(fileHandle.getFile());
-	assert(fileNo != -1);
+	string fileNo(fileHandle.getFileName());
+	//std::cout << "Want to close " << fileHandle.getFileName() << std::endl;
 
 	int ret = 0;
-	std::map<int, fileInfo>::iterator it = fileMap.find(fileNo);
+	std::map<string, fileInfo>::iterator it = fileMap.find(fileNo);
 	if (it == fileMap.end()) {
-		std::cout <<"The fileHandle to be closed is not opened by PagedFileManager";
+		std::cout <<"***The fileHandle to be closed is not opened by PagedFileManager***";
 		return -1;
 	} else {
 		if (--it->second.count == 0) {	// No fileHandle is using this stream
@@ -395,9 +395,18 @@ FileHandle::FileHandle() : file(NULL)
 
 FileHandle::~FileHandle()
 {
-	//Don't Check if PagedFileManager forget to close the file
-	//if (file != NULL)
-		//fclose(file);
+	// Check if PagedFileManager forget to close the file
+	if (file != NULL)
+	{
+		; // currently do nothing
+		PagedFileManager::instance()->closeFile(*this);
+		assert(file == NULL);
+	}
+}
+
+FileHandle& FileHandle::operator =(const FileHandle &that) {
+	PagedFileManager::instance()->openFile(that.getFileName().c_str(), *this);
+	return *this;
 }
 
 int FileHandle::findfreePage(const int length, int* remain)
