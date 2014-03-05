@@ -1,6 +1,6 @@
 
 #include "ix.h"
-
+#include <cstdio>
 IndexManager* IndexManager::_index_manager = 0;
 
 IndexManager* IndexManager::instance()
@@ -21,7 +21,14 @@ IndexManager::~IndexManager()
 
 RC IndexManager::createFile(const string &fileName)
 {
-	return -1;
+	FILE* tmp = fopen(fileName.c_str(), "r");
+	if (tmp != NULL) {
+		fclose(tmp);
+		return -1;
+	} else {
+		// bp_tree constructor will auto create a feil
+		BPlusTree::bp_tree(fileName.c_str());
+	}
 }
 
 RC IndexManager::destroyFile(const string &fileName)
@@ -31,12 +38,24 @@ RC IndexManager::destroyFile(const string &fileName)
 
 RC IndexManager::openFile(const string &fileName, FileHandle &fileHandle)
 {
-	return -1;
+	if(PagedFileManager::instance()->openFile(fileName.c_str(), fileHandle) != 0)
+		return -1;
+	// insert  bp_tree obj
+	std::pair<std::map<string,bp_tree>::iterator,bool> ret;
+	ret = bTreeMap.insert(std::pair<string,bp_tree>(fileName, fileName.c_str()));
+	if (ret.second) return 0;
+	else {
+		std::cout << "Why want to open same btree file more than once?" << std::endl;
+	}
 }
 
 RC IndexManager::closeFile(FileHandle &fileHandle)
 {
-	return -1;
+	int ret = bTreeMap.erase(fileHandle.getFileName());
+	if (ret != 1) {
+		throw new std::logic_error("BTreeFile Map does not have this file!");
+	}
+	return PagedFileManager::instance()->closeFile(fileHandle);
 }
 
 RC IndexManager::insertEntry(FileHandle &fileHandle, const Attribute &attribute, const void *key, const RID &rid)

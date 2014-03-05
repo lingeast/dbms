@@ -6,12 +6,20 @@
 #include <string>
 
 #include "../rbf/rbfm.h"
+#include "../bpt/bptree.h"
+#include "../bpt/bptscanitr.h"
+#include <map>
+#include <string>
 
 # define IX_EOF (-1)  // end of the index scan
 
+using BPlusTree::bp_tree;
+using std::string;
 class IX_ScanIterator;
 
 class IndexManager {
+private:
+	std::map<string, bp_tree> bTreeMap;
  public:
   static IndexManager* instance();
 
