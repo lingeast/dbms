@@ -7,6 +7,7 @@
 
 #include "intkey.h"
 #include <stdio.h>
+#include <iostream>
 int_key::int_key(): val(0), len(0) {
 	// TODO Auto-generated constructor stub
 }
@@ -26,6 +27,9 @@ void int_key::load(const void* data) {
 std::string int_key::to_string() const {
 	char buffer [33];
 	sprintf(buffer,"%d",this->val);
+	if (this->val == 0) {
+		std::cout << "Impossible!";
+	}
 	return std::string(buffer);
 }
 

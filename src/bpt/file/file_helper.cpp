@@ -9,13 +9,13 @@
 #include <cstdio>
 #include "file_helper.h"
 #include <stdexcept>
-
+#include <iostream>
 namespace BPlusTree{
 
 file_helper::file_helper(FILE* f) : file(f) {
 	if (f == NULL)
 		throw std::runtime_error("file_helper: constructor receive null file ptr.");
-
+	std::cout << "PAGE_SIZE = " << PAGE_SIZE << "in file helper." << std::endl;
 	move_cursor(0);
 	//read_page_block(0, dir.page_block());	// Init dir_page
 }

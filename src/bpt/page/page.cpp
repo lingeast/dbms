@@ -59,10 +59,14 @@ void page_node::insert_to_leaf(bt_key* key, RID rid, bt_key* itr) {
 		if (!(*itr < *key)) break;
 		offset += itr->length() + sizeof(rid);
 	}
+	//cout << "Before Insertion (PageNum = "<< this->pageID << "): " << endl;
+	//this->print_leaf(itr);
 	memmove(content + offset + key->length() + sizeof(rid), content + offset, *end - offset);
 	memcpy(content + offset, key->data(),key->length());
 	memcpy(content + offset + key->length(), &rid, sizeof(rid));
 	*end += key->length() + sizeof(rid);
+	//cout << "After Insertion: "<< endl;
+	//this->print_leaf(itr);
 
 }
 

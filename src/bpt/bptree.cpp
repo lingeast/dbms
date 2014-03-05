@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
+#include <cassert>
 
 using namespace std;
 
@@ -90,6 +91,7 @@ int bp_tree::delete_entry(bt_key *key, RID rid) {
 
 void bp_tree::insert_entry(bt_key *key, RID rid) {
 	if (key_itr == NULL) {
+		cout << "Init key_itr" << endl;
 		key_itr = key->clone();
 	}
 
@@ -103,7 +105,6 @@ void bp_tree::insert_entry(bt_key *key, RID rid) {
 		fhelp->write_page(0, dir.page_block());
 	}
 
-
 	page_node root(dir.root());
 	fhelp->read_page(dir[root.page_id()], root.page_block());
 	key = insert_to_page(root, key, rid);
@@ -116,15 +117,21 @@ void bp_tree::insert_entry(bt_key *key, RID rid) {
 				break;
 			}
 		}
+		assert(splitpage != 0);
+		cout << "New Root Num = " << splitpage << endl;
 		page_node newroot(Index, splitpage, 0, 0);
 		dir.update_root(newroot.page_id());
 		dir[splitpage] = splitpage;
+		fhelp->write_page(0, dir.page_block());
+		cout << "New Root Num = " << newroot.page_id() << endl;
+
+		// fill in new root page
 		uint16_t id = root.page_id();
 		memcpy(newroot.content_block(), &id, sizeof(int16_t));
 		memcpy(newroot.content_block() + sizeof(root.page_id()), key->data(), key->length());
 		memcpy(newroot.content_block() + sizeof(int16_t) + key->length(), &root.right_id(), sizeof(int16_t));
 		newroot.end_offset() = key->length() + 2 * sizeof(int16_t);
-		fhelp->write_page(dir[newroot.page_id()],newroot.page_block());
+		fhelp->write_page(dir[newroot.page_id()], newroot.page_block());
 	}
 	//insert_to_page
 }
@@ -147,7 +154,7 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 				}
 			}
 
-			cout << "Want to split page, new page num = " << splitpage;
+			cout << "Want to split leaf page, new page num = " << splitpage;
 			if (splitpage == 0) {
 				throw new std::runtime_error("Not enough room in dir page!");
 			}
@@ -174,8 +181,17 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 			bt_key* newkey = key;
 			newkey -> load(splitpg.content_block());
 			fhelp -> write_page(0,dir.page_block());
+
+			assert(dir[pg.page_id()] == pg.page_id());
 			fhelp -> write_page(pg.page_id(),pg.page_block());
+
+			assert(dir[splitpg.page_id()] == splitpg.page_id());
 			fhelp -> write_page(splitpg.page_id(),splitpg.page_block());
+
+
+			// TEST READ BACK
+			fhelp->read_page(pg.page_id(),pg.page_block());
+			fhelp->read_page(splitpg.page_id(),splitpg.page_block());
 
 			// TEST code
 			cout<<"Page split(leaf): Left is:"<<endl;
