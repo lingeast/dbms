@@ -12,7 +12,6 @@
 #include <cassert>
 
 using namespace std;
-
 namespace BPlusTree{
 
 bp_tree::bp_tree(const char *name) : fName(name), file(NULL), fhelp(NULL), key_itr(NULL) {
@@ -69,21 +68,25 @@ int bp_tree::delete_entry(bt_key *key, RID rid) {
 	if (dir.root() < 1){
 		return -1;
 	}
-	cout <<"root is page: "<<dir.root()<<endl;
+	//cout <<"root is page: "<<dir.root()<<endl;
 	page_node pg(dir.root());
 	fhelp->read_page(dir[pg.page_id()], pg.page_block());
-	cout<<"test"<<endl;
+	//cout<<"test"<<endl;
 
 	while(!pg.is_leaf_node()){
 		int entrypg = pg.findEntry(key,key_itr);
 		pg.set_id(entrypg);
 		fhelp->read_page(dir[pg.page_id()],pg.page_block());
 	}
+	/*
 	cout<<"page before delete:"<<endl;
 	pg.print_leaf(key_itr);
-	ret = pg.delete_leaf(key,rid,key_itr);
+
 	cout<<"page after delete:"<<endl;
 	pg.print_leaf(key_itr);
+	*/
+
+	ret = pg.delete_leaf(key,rid,key_itr);
 	fhelp ->write_page(pg.page_id(),pg.page_block());
 	return ret;
 
@@ -123,7 +126,7 @@ void bp_tree::insert_entry(bt_key *key, RID rid) {
 		dir.update_root(newroot.page_id());
 		dir[splitpage] = splitpage;
 		fhelp->write_page(0, dir.page_block());
-		cout << "New Root Num = " << newroot.page_id() << endl;
+		//cout << "New Root Num = " << newroot.page_id() << endl;
 
 		// fill in new root page
 		uint16_t id = root.page_id();
@@ -164,10 +167,10 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 			int flag = 1,splitpos = 0;
 
 			splitpos = pg.findHalf(key,rid,flag,key_itr);
-			cout << "; Split Position at" << splitpos << endl;
+			//cout << "; Split Position at" << splitpos << endl;
 
-			cout << "Before Split" << endl;
-			pg.print_leaf(key_itr);
+			//cout << "Before Split" << endl;
+			//pg.print_leaf(key_itr);
 
 			memcpy(splitpg.content_block(), pg.content_block() + splitpos, pg.end_offset() - splitpos);
 			splitpg.end_offset() = pg.end_offset() - splitpos; // Update new page end_off
@@ -190,14 +193,14 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 
 
 			// TEST READ BACK
-			fhelp->read_page(pg.page_id(),pg.page_block());
-			fhelp->read_page(splitpg.page_id(),splitpg.page_block());
+			//fhelp->read_page(pg.page_id(),pg.page_block());
+			//fhelp->read_page(splitpg.page_id(),splitpg.page_block());
 
 			// TEST code
-			cout<<"Page split(leaf): Left is:"<<endl;
-			pg.print_leaf(key_itr);
-			cout<<"Page split(leaf): Right is:"<<endl;
-			splitpg.print_leaf(key_itr);
+			//cout<<"Page split(leaf): Left is:"<<endl;
+			//pg.print_leaf(key_itr);
+			//cout<<"Page split(leaf): Right is:"<<endl;
+			//splitpg.print_leaf(key_itr);
 
 			cout << "Copy Up key = " << newkey->to_string() << endl;
 
@@ -248,10 +251,12 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 					free(tempkey);
 
 					//TEST code
+					/*
 					cout<<"split at index: left is"<<endl;
 					pg.print_index(key_itr);
 					cout<<"split at index: right is"<<endl;
 					splitpg.print_index(key_itr);
+					*/
 
 					fhelp ->write_page(0,dir.page_block());
 					fhelp ->write_page(pg.page_id(),pg.page_block());
@@ -272,10 +277,12 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 						pg.right_id() = splitpg.page_id();
 
 						//TEST code
+						/*
 						cout<<"split at index: left is"<<endl;
 						pg.print_index(key_itr);
 						cout<<"split at index: right is"<<endl;
 						splitpg.print_index(key_itr);
+						*/
 
 
 						fhelp ->write_page(0,dir.page_block());
@@ -293,10 +300,12 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 						key->load(pg.content_block() + splitpos);
 
 						// TEST CODE
+						/*
 						cout<<"split at index: left is"<<endl;
 						pg.print_index(key_itr);
 						cout<<"split at index: right is"<<endl;
 						splitpg.print_index(key_itr);
+						*/
 
 
 						fhelp ->write_page(0,dir.page_block());
