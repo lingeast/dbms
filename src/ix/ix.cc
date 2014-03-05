@@ -166,8 +166,17 @@ RC IndexManager::scan(FileHandle &fileHandle,
 		break;
 	}
 
-	lowk->load(lowKey);
-	hik->load(highKey);
+	if (lowKey != NULL) {
+		lowk->load(lowKey);
+	} else {
+		lowk->set_inf(-1);
+	}
+
+	if (highKey != NULL) {
+		hik->load(highKey);
+	} else {
+		hik->set_inf(1);
+	}
 
 	bpt_scan_itr* bsi = new bpt_scan_itr(fileHandle.getFileName(), lowk, hik,
 			lowKeyInclusive, highKeyInclusive);

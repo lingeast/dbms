@@ -17,6 +17,7 @@ bpt_scan_itr::bpt_scan_itr(std::string fname, bt_key* lok, bt_key* hik, bool lo_
 		file(fopen(fname.c_str(),"r")), fhelp(file),
 		lo_inc(lo_in), hi_inc(hi_in), offset(0), key_itr(lok->clone()), hi_key(hik->clone()) {
 	// TODO Auto-generated constructor stub
+	key_itr->set_inf(0);
 	fhelp.read_page(0, this->dir.page_block()); // read in dir page
 
 	cur_leaf.set_id(dir.root()); // read in root page

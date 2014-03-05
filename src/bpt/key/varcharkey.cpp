@@ -78,5 +78,9 @@ bool varchar_key::operator==(const comparable &rhs)  {
      }
 }
 
+void varchar_key::set_inf(int flag) {
+	return;
+}
+
 
 

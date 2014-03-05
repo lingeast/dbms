@@ -199,7 +199,7 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 			cout<<"Page split(leaf): Right is:"<<endl;
 			splitpg.print_leaf(key_itr);
 
-			cout << "Push Up key = " << newkey->to_string() << endl;
+			cout << "Copy Up key = " << newkey->to_string() << endl;
 
 			return newkey;
 		}
@@ -256,6 +256,8 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 					fhelp ->write_page(0,dir.page_block());
 					fhelp ->write_page(pg.page_id(),pg.page_block());
 					fhelp ->write_page(splitpg.page_id(),splitpg.page_block());
+
+					cout << "Cut up key" << endl;
 					return key;
 				}
 				else {

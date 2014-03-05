@@ -36,6 +36,8 @@ public:
 	bool operator<(const comparable &rhs);
 	bool operator==(const comparable &rhs);
 
+	void set_inf(int flag);
+
 	bt_key* clone() const {
 		return new float_key(*this);
 	}

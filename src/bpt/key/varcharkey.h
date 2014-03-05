@@ -40,6 +40,7 @@ public:
 	bool operator<(const comparable &rhs);
 	bool operator==(const comparable &rhs);
 
+	void set_inf(int flag);
 	~varchar_key();
 
 	bt_key* clone() const {

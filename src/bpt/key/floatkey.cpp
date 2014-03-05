@@ -87,3 +87,7 @@ bool float_key::operator==(const comparable &rhs) {
     	return (*this == *pRhs);
     }
 }
+
+void float_key::set_inf(int flag) {
+	return;
+}
