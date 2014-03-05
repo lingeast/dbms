@@ -37,7 +37,10 @@ public:
 
 	// release occupied resources
 	void close() {
-		if (file != NULL) fclose(file);
+		if (file != NULL) {
+			fclose(file);
+			file = NULL;
+		}
 
 		if (key_itr != NULL){
 			delete key_itr;

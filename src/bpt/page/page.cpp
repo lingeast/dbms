@@ -162,6 +162,7 @@ int page_node::delete_leaf(bt_key *key, RID rid, bt_key *itr){
 }
 
 dir_page::dir_page() {
+	//std::cout << "PAGE_SIZE " << PAGE_SIZE << std::endl;
 	memset(&page, 0, sizeof(page));
 }
 

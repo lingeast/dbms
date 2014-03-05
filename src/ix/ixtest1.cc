@@ -202,6 +202,7 @@ int testCase_3(const string &indexFileName, const Attribute &attribute)
         goto error_return;
     }
 
+    cout << "Test Case 3 passed" << endl;
     g_nGradPoint += 5;
     g_nUndergradPoint += 5;
     return success;

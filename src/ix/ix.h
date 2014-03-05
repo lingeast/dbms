@@ -14,6 +14,7 @@
 # define IX_EOF (-1)  // end of the index scan
 
 using BPlusTree::bp_tree;
+using BPlusTree::bpt_scan_itr;
 using std::string;
 class IX_ScanIterator;
 
@@ -62,12 +63,15 @@ private:
 };
 
 class IX_ScanIterator {
+private:
+	bpt_scan_itr* scan_itr;
  public:
-  IX_ScanIterator();  							// Constructor
+  IX_ScanIterator();			// Constructor
   ~IX_ScanIterator(); 							// Destructor
 
   RC getNextEntry(RID &rid, void *key);  		// Get next matching entry
   RC close();             						// Terminate index scan
+  void set_itr(bpt_scan_itr* that);
 };
 
 // print out the error message for a given return code
