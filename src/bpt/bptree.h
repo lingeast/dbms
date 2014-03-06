@@ -34,12 +34,13 @@ private:
 	bt_key* key_itr;
 	dir_page dir;
 	bt_key* insert_to_page(page_node& pg, bt_key* key, RID rid);
+	int RCinsert;
 public:
 	bp_tree(const char *name);
 	bp_tree(const bp_tree&);
 	~bp_tree();
 
-	void insert_entry(bt_key*, RID);
+	int insert_entry(bt_key*, RID);
 
 	int delete_entry(bt_key*, RID);
 };
