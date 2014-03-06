@@ -145,7 +145,7 @@ RC IndexManager::scan(FileHandle &fileHandle,
 		return -1;
 	} else {
 		fclose(tmp);
-		tmp == NULL;
+		tmp = NULL;
 	}
 
 	bt_key* lowk = NULL;
