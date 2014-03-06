@@ -55,8 +55,8 @@ bool int_key::operator <(const comparable &rhs) {
     } else {
     	if (this->is_inf() && pRhs->is_inf()) {
     		throw new std::logic_error("Comparing infinites is useless");
-    	}
-    	if (this->is_inf()) {
+    		return false;
+    	} else if (this->is_inf()) {
     		if (pos_inf) return false;
     		if (neg_inf) return true;
     	} else if (pRhs->is_inf()) {
@@ -65,6 +65,7 @@ bool int_key::operator <(const comparable &rhs) {
     	} else {
     		return this->val < pRhs->val;
     	}
+    return false;
     }
 }
 

@@ -66,6 +66,7 @@ public:
 	void print_leaf(bt_key *itr) const;
 	void print_index(bt_key *itr) const;
 	int delete_leaf(bt_key *key, RID rid, bt_key *itr);
+	int check_duplicate(bt_key *key, RID rid, bt_key *itr);
 };
 
 /*

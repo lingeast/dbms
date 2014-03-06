@@ -99,11 +99,11 @@ RC IndexManager::insertEntry(FileHandle &fileHandle, const Attribute &attribute,
 	}
 	insert_key->load(key);
 
-	bpt->second.insert_entry(insert_key, rid);
+	RC ret = bpt->second.insert_entry(insert_key, rid);
 
 	if (insert_key != NULL) delete insert_key;
 
-	return 0;
+	return ret;
 }
 
 RC IndexManager::deleteEntry(FileHandle &fileHandle, const Attribute &attribute, const void *key, const RID &rid)

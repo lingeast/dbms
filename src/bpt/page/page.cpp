@@ -47,7 +47,6 @@ void page_node::insert_to_index(bt_key* key, RID rid, bt_key* itr) {
 	memmove(content + offset + key->length() + sizeof(uint16_t), content + offset, *end - offset);
 	memcpy(content + offset, key->data(),key->length());
 	memcpy(content + offset + key->length(), &rid.pageNum, sizeof(uint16_t));
-	//std::cout<<"insert "
 	*end += key->length() + sizeof(uint16_t);
 }
 
@@ -59,14 +58,10 @@ void page_node::insert_to_leaf(bt_key* key, RID rid, bt_key* itr) {
 		if (!(*itr < *key)) break;
 		offset += itr->length() + sizeof(rid);
 	}
-	//cout << "Before Insertion (PageNum = "<< this->pageID << "): " << endl;
-	//this->print_leaf(itr);
 	memmove(content + offset + key->length() + sizeof(rid), content + offset, *end - offset);
 	memcpy(content + offset, key->data(),key->length());
 	memcpy(content + offset + key->length(), &rid, sizeof(rid));
 	*end += key->length() + sizeof(rid);
-	//cout << "After Insertion: "<< endl;
-	//this->print_leaf(itr);
 
 }
 
@@ -90,6 +85,25 @@ page_node::page_node(NodeType nt, int id, int left_id, int right_id) : pageID(id
 void page_node::insert(bt_key* key, RID rid, bt_key* itr) {
 	if (is_leaf_node()) insert_to_leaf(key, rid, itr);
 	else insert_to_index(key, rid, itr);
+}
+
+int page_node::check_duplicate(bt_key *key, RID rid, bt_key *itr){
+	int offset = 0;
+	while(true) {
+		if(offset >= *end) break;
+		itr->load(content + offset);
+		if (*key < *itr) break;
+		if (*itr == *key){
+			RID newRid;
+			newRid.pageNum = *(int32_t*)(content + offset + itr->length());
+			newRid.slotNum = *(int32_t*)(content + offset + itr->length() + sizeof(int32_t));
+			if( rid.pageNum == newRid.pageNum && rid.slotNum == newRid.slotNum){
+				return -1;
+			}
+		}
+		offset += itr->length() + sizeof(rid);
+	}
+	return 0;
 }
 
 int page_node::findEntry(bt_key* key, bt_key *itr){
@@ -166,7 +180,6 @@ int page_node::delete_leaf(bt_key *key, RID rid, bt_key *itr){
 }
 
 dir_page::dir_page() {
-	//std::cout << "PAGE_SIZE " << PAGE_SIZE << std::endl;
 	memset(&page, 0, sizeof(page));
 }
 
