@@ -16,6 +16,17 @@ unsigned int const RAW_INT_SIZE = 4;
 
 # define RM_EOF (-1)  // end of a scan operator
 
+// RM_IndexScanIterator scan the index of a given table
+class RM_IndexScanIterator {
+ public:
+  RM_IndexScanIterator(){}  	// Constructor
+  ~RM_IndexScanIterator(){} 	// Destructor
+
+  // "key" follows the same format as in IndexManager::insertEntry()
+  RC getNextEntry(RID &rid, void *key){return -1;}  	// Get next matching entry
+  RC close(){return -1;}            			// Terminate index scan
+};
+
 // RM_ScanIterator is an iteratr to go through tuples
 // The way to use it is like the following:
 //  RM_ScanIterator rmScanIterator;
@@ -217,6 +228,20 @@ public:
 
   RC reorganizeTable(const string &tableName);
 
+// Project 4
+  RC createIndex(const string &tableName, const string &attributeName);
+
+  RC destroyIndex(const string &tableName, const string &attributeName);
+
+  // indexScan returns an iterator to allow the caller to go through qualified entries in index
+  RC indexScan(const string &tableName,
+                        const string &attributeName,
+                        const void *lowKey,
+                        const void *highKey,
+                        bool lowKeyInclusive,
+                        bool highKeyInclusive,
+                        RM_IndexScanIterator &rm_IndexScanIterator
+       );
 
 
 protected:

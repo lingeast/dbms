@@ -1,4 +1,3 @@
-
 #include "rm.h"
 /*
 RC RM_ScanIterator::loadConfig(RecordBasedFileManager* sing_rbfm,
@@ -568,3 +567,23 @@ RC RelationManager::reorganizeTable(const string &tableName)
 {
     return -1;
 }
+
+RC RelationManager::createIndex(const string& tableName, const string& attributeName) {
+	return -1;
+}
+
+RC RelationManager::destroyIndex(const string &tableName, const string &attributeName) {
+	return -1;
+}
+
+ // indexScan returns an iterator to allow the caller to go through qualified entries in index
+ RC RelationManager::indexScan(const string &tableName,
+                       const string &attributeName,
+                       const void *lowKey,
+                       const void *highKey,
+                       bool lowKeyInclusive,
+                       bool highKeyInclusive,
+                       RM_IndexScanIterator &rm_IndexScanIterator)
+ {
+	 return -1;
+ }
