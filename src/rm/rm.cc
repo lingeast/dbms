@@ -569,23 +569,43 @@ RC RelationManager::reorganizeTable(const string &tableName)
 }
 
 RC RelationManager::createIndex(const string& tableName, const string& attributeName) {
-	RM_ScanIterator RM_table_itr;
+	// Find attribute
+	vector<Attribute> attributes;
+	if (this->getAttributes(tableName, attributes) != 0) return -1;
+	Attribute attr;
+	for (int i = 0; i < attributes.size(); i++) {
+		if(attributes[i].name == attributeName) {
+			attr = attributes[i];
+			break;
+		}
+	}
+
+
+	RM_ScanIterator RM_itr;
 	vector<string> attributeNames;
 	attributeNames.push_back(attributeName);
 
-	// Prepare tableName data
-	char* tblNameVal = new char[sizeof(int32_t) + tableName.size()];
-	uint32_t nameLen = tableName.size();
-	memcpy(tblNameVal, &nameLen, sizeof(nameLen));
-	memcpy(tblNameVal + sizeof(nameLen), tableName.c_str(), nameLen);
-
-	scan(string(TABLE_CATALOG),	//tableName
-	      tableName,	//conditionAttribute
-	      EQ_OP,				// CompOp
-	      tblNameVal,					// void* value
+	scan(tableName,	//tableName
+	      string("not used"),	//conditionAttribute
+	      NO_OP,				// CompOp
+	      NULL,					// void* value
 	      attributeNames,	// vector<string>& attributeNames
-	      RM_table_itr);			// rm_ScanIterator
-	return -1;
+	      RM_itr);			// rm_ScanIterator
+
+	IndexManager* im = IndexManager::instance();
+	string idxName = tableName + "_" + attributeName + ".idx";
+	if (im->createFile(idxName) != 0) return -1;
+	FileHandle idxFH;
+	if (im->openFile(idxName, idxFH) != 0) return -1;
+
+	RID rid;
+	char buffer[200];
+	while(RM_itr.getNextTuple(rid, buffer) != RM_EOF) {
+		im->insertEntry(idxFH, attr, buffer, rid);
+	}
+
+
+	return 0;
 }
 
 RC RelationManager::destroyIndex(const string &tableName, const string &attributeName) {

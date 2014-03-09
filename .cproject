@@ -43,7 +43,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src/rm/rmtest_2.cc|src/rm/rmtest_1.cc|src/qe/qetest.cc|src/ix/ixtest2.cc|src/ix/ixtest1.cc|src/rbf/rbftest.cc|src/rm/rmtest_extra.cc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src/rm/rmtest_2.cc|src/rm/rmtest_1.cc|src/ix/ixtest2.cc|src/ix/ixtest1.cc|src/rbf/rbftest.cc|src/rm/rmtest_extra.cc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -73,7 +73,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src/rm/rmtest_2.cc|src/rm/rmtest_1.cc|src/qe/qetest.cc|src/ix/ixtest2.cc|src/ix/ixtest1.cc|src/rbf/rbftest.cc|src/rm/rmtest_extra.cc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src/rm/rmtest_2.cc|src/rm/rmtest_1.cc|src/ix/ixtest2.cc|src/ix/ixtest1.cc|src/rbf/rbftest.cc|src/rm/rmtest_extra.cc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
