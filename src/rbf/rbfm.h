@@ -65,7 +65,7 @@ private:
 	vector<Attribute> recordDescriptor;
 	string conditionAttribute;
 	CompOp compOp;                  // comparision type such as "<" and "="
-	const void *value;                   // used in the comparison
+	void *value;                   // used in the comparison
 	vector<string> attributeNames; // a list of projected attributes
 	RecordBasedFileManager* rbfm;
 
@@ -84,7 +84,7 @@ public:
 	      const vector<Attribute> &recordDescriptor,
 	      const string &conditionAttribute,
 	      const CompOp compOp,                  // comparision type such as "<" and "="
-	      const void *value,                    // used in the comparison
+	      const void *val,                    // used in the comparison
 	      const vector<string> &attributeNames, // a list of projected attributes
 	      RecordBasedFileManager *rbfm
   	  	  );

@@ -1,6 +1,8 @@
 
 #include "rbfm.h"
-#include <cassert>
+#include <assert.h>
+#include <cstdlib>
+#include <cstring>
 
 
 RecordBasedFileManager* RecordBasedFileManager::_rbf_manager = 0;
@@ -421,10 +423,17 @@ RBFM_ScanIterator::RBFM_ScanIterator(){
 }
 
 RBFM_ScanIterator::~RBFM_ScanIterator(){
-
+	/*
+	if (value) {
+		cout << "Forget to call close?" << endl;
+		delete value;
+		rbfm->closeFile(fileHandle);
+	}
+	*/
 }
 
 RC RBFM_ScanIterator::close() {
+	if (value != NULL) free(value);
 	return rbfm->closeFile(fileHandle);
 }
 
@@ -432,20 +441,20 @@ void RBFM_ScanIterator::setIterator(FileHandle &fileHandle,
 	      const vector<Attribute> &recordDescriptor,
 	      const string &conditionAttribute,
 	      const CompOp compOp,                  // comparision type such as "<" and "="
-	      const void *value,                    // used in the comparison
+	      const void *val,                    // used in the comparison
 	      const vector<string> &attributeNames, // a list of projected attributes
-	      RecordBasedFileManager *rbfm
-	      ){
-	this->fileHandle = fileHandle;
-	this->recordDescriptor = recordDescriptor;
-	this->conditionAttribute = conditionAttribute;
-	this->compOp = compOp;
-	this->value = value;
-	this->attributeNames = attributeNames;
-	this->ph.loadPage(0,fileHandle);
+	      RecordBasedFileManager *rbfm)
+{
+	this->fileHandle = fileHandle; 			//deep copy
+	this->recordDescriptor = recordDescriptor;		//deep copy
+	this->conditionAttribute = conditionAttribute;	// deep copy
+	this->compOp = compOp;					//deep copy
+	//this->value = value;					// shallow copy
+	this->attributeNames = attributeNames;	// deep copy
+	this->ph.loadPage(0,fileHandle);		// deep read
 	this->currentRID.pageNum = 0;
 	this->currentRID.slotNum = 0;
-	this->rbfm = rbfm;
+	this->rbfm = rbfm;					// shallow copy singleton class ptr
 	for (int j = 0 ; j < attributeNames.size() ; j++ ){
 		for (int i = 0 ; i < recordDescriptor.size() ; i++ ){
 			if (attributeNames[j].compare((recordDescriptor[i]).name) == 0){
@@ -467,6 +476,29 @@ void RBFM_ScanIterator::setIterator(FileHandle &fileHandle,
 			break;
 		}
 	}
+
+	if (val != NULL) {
+		//cout << "Begin to deep copy value in RBFM_ITR" << endl;
+		size_t val_len = 0;
+		switch(type) {
+		case TypeInt:
+			val_len = sizeof(uint32_t);
+			break;
+		case TypeReal:
+			val_len = sizeof(uint32_t);
+			break;
+		case TypeVarChar:
+			val_len = *(uint32_t*)val + sizeof(uint32_t);
+			break;
+		default:
+			cout << "Can't be here" << endl;
+			assert(false);
+		}
+		this->value = malloc(val_len);
+		memcpy(this->value, val, val_len);
+	}
+
+
 }
 
 RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){

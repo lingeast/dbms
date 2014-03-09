@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cassert>
 
+#include "../ix/ix.h"
 #include "../rbf/rbfm.h"
 
 using namespace std;

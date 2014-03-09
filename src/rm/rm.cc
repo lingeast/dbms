@@ -569,6 +569,22 @@ RC RelationManager::reorganizeTable(const string &tableName)
 }
 
 RC RelationManager::createIndex(const string& tableName, const string& attributeName) {
+	RM_ScanIterator RM_table_itr;
+	vector<string> attributeNames;
+	attributeNames.push_back(attributeName);
+
+	// Prepare tableName data
+	char* tblNameVal = new char[sizeof(int32_t) + tableName.size()];
+	uint32_t nameLen = tableName.size();
+	memcpy(tblNameVal, &nameLen, sizeof(nameLen));
+	memcpy(tblNameVal + sizeof(nameLen), tableName.c_str(), nameLen);
+
+	scan(string(TABLE_CATALOG),	//tableName
+	      tableName,	//conditionAttribute
+	      EQ_OP,				// CompOp
+	      tblNameVal,					// void* value
+	      attributeNames,	// vector<string>& attributeNames
+	      RM_table_itr);			// rm_ScanIterator
 	return -1;
 }
 

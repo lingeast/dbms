@@ -186,7 +186,7 @@ public:
     FileHandle();                                                    // Default constructor
     ~FileHandle();                                                   // Destructor
 
-    FileHandle& operator=(const FileHandle& that);
+    FileHandle& operator=(const FileHandle& that);	// copy assignment
     FILE* getFile() const {return file;}									// file instance getter
     void setFile(FILE * that) {file = that;}						// file setter
     const string& getFileName() const {return fileName;}					// filename getter
