@@ -1,11 +1,26 @@
 #include "rm.h"
-/*
-RC RM_ScanIterator::loadConfig(RecordBasedFileManager* sing_rbfm,
-			const vector <Attribute>& recordDescriptor,
-			const FileHandle& fileH) {
-	return RBDM_it.loadConfig(sing_rbfm, recordDescriptor, fileH);
+RM_IndexScanIterator::RM_IndexScanIterator() : ix_scan(NULL) {}
+
+RM_IndexScanIterator::~RM_IndexScanIterator() {
+	this->close();
 }
-*/
+
+RC RM_IndexScanIterator::close() {
+	return this->ix_scan->close();
+}
+
+RC RM_IndexScanIterator::getNextEntry(RID& rid, void* key) {
+	return this->ix_scan->getNextEntry(rid, key);
+}
+
+void RM_IndexScanIterator::set_itr(IX_ScanIterator* that_scan) {
+	if (that_scan == NULL) {
+		throw new std::logic_error("RM_IndexScanIterator need non-null ptr");
+	} else {
+		this->ix_scan = that_scan;
+	}
+}
+
 RelationManager* RelationManager::_rm = 0;
 
 RelationManager* RelationManager::instance()
@@ -74,6 +89,7 @@ RelationManager::~RelationManager()
 const char TABLE_CATALOG[] = "table.tbl";
 const char COL_CATALOG[] = "column.tbl";
 const char TABLE_SUFFIX[] = ".db";
+
 RC RelationManager::createTable(const string &tableName, const vector<Attribute> &attrs)
 {
 	//RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
@@ -118,27 +134,6 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 		//rbfm->printRecord(this->colRecord, cr.recordData());
 		if (rbfm->insertRecord(colT, this->colRecord, cr.recordData(), recordID) != 0) return -1;
 	}
-	// TODO : remove test code
-/*
-	RM_ScanIterator RM_it;
-	scan(defaultCol,
-	      string("not used"),
-	      EQ_OP,
-	      NULL,
-	      vector<string>(),
-	      RM_it);
-
-	char rawData[2000];
-	RID id;
-	std::cout << "Iterator Begin" << std::endl;
-	while(RM_it.getNextTuple(id, rawData) != RM_EOF) {
-		std::cout << "PageNum: " << id.pageNum << " SlotNum: " << id.slotNum << std::endl;
-		rbfm->printRecord(colRecord, rawData);
-	}
-
-	RM_it.close();
-	*/
-	// TODO : test code end
 	if(rbfm->closeFile(colT) != 0) return -1;
 
 	return rbfm->createFile(tableName + TABLE_SUFFIX);
@@ -309,6 +304,26 @@ int RelationManager::fillAttr(void* record, Attribute& attr) {
 	return pos;
 }
 
+string RelationManager::indexName(const string& tableName, const string& attrName) {
+	return tableName + "_" + attrName + ".idx";
+}
+
+/*
+ * return Attribute for given table name and attribute name
+ * if no such attribute or table, return empty Attribute (Attribute.name is empty)
+ */
+Attribute RelationManager::getAttr(const string &tableName, const string &attributeName) {
+	vector<Attribute> attributes;
+	getAttributes(tableName, attributes);
+	for (int i = 0; i < attributes.size(); i++) {
+		if(attributes[i].name == attributeName) {
+			return attributes[i];
+		}
+	}
+	Attribute attr;
+	return attr;
+}
+
 RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &attrs)
 {
 	int attrSize = getTableColNum(tableName);
@@ -432,10 +447,7 @@ RC RelationManager::readTuple(const string &tableName, const RID &rid, void *dat
 		rbfm->closeFile(tableF);
 		return -1;
 	}
-	//cout << "get attr end" << endl;
-	// TODO remove test code
-	//std::cout << "readRecord Begin" << std::endl;
-	// TODO test code end
+
 	int ret =  rbfm->readRecord(tableF, recDscptr,  rid, data);
 	//std::cout << "readRecord End" << std::endl;
 	if (rbfm->closeFile(tableF) !=  0) return -1;
@@ -568,23 +580,17 @@ RC RelationManager::reorganizeTable(const string &tableName)
     return -1;
 }
 
+
 RC RelationManager::createIndex(const string& tableName, const string& attributeName) {
 	// Find attribute
-	vector<Attribute> attributes;
-	if (this->getAttributes(tableName, attributes) != 0) return -1;
-	Attribute attr;
-	for (int i = 0; i < attributes.size(); i++) {
-		if(attributes[i].name == attributeName) {
-			attr = attributes[i];
-			break;
-		}
-	}
+	Attribute attr = this->getAttr(tableName, attributeName);
+	if (attr.name.empty()) // get attribute information failed
+		return -1;
 
-
+	// Scan table to insert attribute into index file one by one
 	RM_ScanIterator RM_itr;
 	vector<string> attributeNames;
 	attributeNames.push_back(attributeName);
-
 	scan(tableName,	//tableName
 	      string("not used"),	//conditionAttribute
 	      NO_OP,				// CompOp
@@ -593,7 +599,7 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 	      RM_itr);			// rm_ScanIterator
 
 	IndexManager* im = IndexManager::instance();
-	string idxName = tableName + "_" + attributeName + ".idx";
+	string idxName = indexName(tableName, attributeName);
 	if (im->createFile(idxName) != 0) return -1;
 	FileHandle idxFH;
 	if (im->openFile(idxName, idxFH) != 0) return -1;
@@ -609,7 +615,8 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 }
 
 RC RelationManager::destroyIndex(const string &tableName, const string &attributeName) {
-	return -1;
+	IndexManager* im = IndexManager::instance();
+	return im->destroyFile(this->indexName(tableName, attributeName));
 }
 
  // indexScan returns an iterator to allow the caller to go through qualified entries in index
@@ -621,5 +628,19 @@ RC RelationManager::destroyIndex(const string &tableName, const string &attribut
                        bool highKeyInclusive,
                        RM_IndexScanIterator &rm_IndexScanIterator)
  {
-	 return -1;
+	 IndexManager* im = IndexManager::instance();
+	 FileHandle indexF;
+	 if (im->openFile(indexName(tableName, attributeName), indexF) != 0)
+		 return -1;	// failed on index file
+	 IX_ScanIterator* ix_scan_ptr = new IX_ScanIterator();
+
+	 Attribute attr = this->getAttr(tableName, attributeName);
+	 if (attr.name.empty()) return -1;	// failed retrieve attribute type
+
+	 IndexManager::instance()->scan(indexF, attr,
+			 lowKey, highKey, lowKeyInclusive, highKeyInclusive, *ix_scan_ptr);
+
+	 rm_IndexScanIterator.set_itr(ix_scan_ptr);
+	 return 0;
+
  }

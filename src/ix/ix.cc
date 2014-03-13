@@ -61,7 +61,7 @@ RC IndexManager::openFile(const string &fileName, FileHandle &fileHandle)
 		return 0;
 	} else {
 		std::cout << "Why want to open same btree file more than once?" << std::endl;
-		return -1;
+		return 0;
 	}
 	std::cout << "Never reach here" << std::endl;
 	return 0;
@@ -178,6 +178,8 @@ RC IndexManager::scan(FileHandle &fileHandle,
 		hik->set_inf(1);
 	}
 
+	// A newly created B+ tree object to be passed into ix_ScanIterator
+	// its life cycle controlled by ix_ScanIterator object
 	bpt_scan_itr* bsi = new bpt_scan_itr(fileHandle.getFileName(), lowk, hik,
 			lowKeyInclusive, highKeyInclusive);
 
@@ -211,9 +213,15 @@ RC IX_ScanIterator::getNextEntry(RID &rid, void *key)
 
 RC IX_ScanIterator::close()
 {
-	if (scan_itr != NULL) delete scan_itr;
-	scan_itr = NULL;
-	return 0;
+	if (scan_itr != NULL) {
+		delete scan_itr;
+		scan_itr = NULL;
+		return 0;
+	} else {
+		// has closed before or has not inited yet
+		return -1;
+	}
+
 }
 
 void IX_PrintError (RC rc)

@@ -1459,6 +1459,8 @@ int main() {
 	g_nGradPoint += 5;
 	g_nUndergradPoint += 5;
 
+	cout << "Passed: points = " << g_nGradPoint << endl;
+
 	// Create the right table
 	if (createRightTable() != success) {
 		goto print_point;
@@ -1470,49 +1472,61 @@ int main() {
 	g_nGradPoint += 5;
 	g_nUndergradPoint += 5;
 
+	cout << "Passed: points = " << g_nGradPoint << endl;
+
 	if (testCase_3() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradPoint += 5;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
+
 
 	if (testCase_4() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradPoint += 5;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_5() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_6() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradPoint += 10;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_7() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradExtraPoint += 3;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_8() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_9_Grad() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradExtraPoint += 2;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_9_Undergrad() == success) {
 		g_nGradPoint += 2;
 		g_nUndergradPoint += 5;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_10() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
+		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	// Create left/right large table, and populate the table

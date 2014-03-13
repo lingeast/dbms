@@ -19,13 +19,17 @@ unsigned int const RAW_INT_SIZE = 4;
 
 // RM_IndexScanIterator scan the index of a given table
 class RM_IndexScanIterator {
+private:
+	IX_ScanIterator* ix_scan;
  public:
-  RM_IndexScanIterator(){}  	// Constructor
-  ~RM_IndexScanIterator(){} 	// Destructor
+  RM_IndexScanIterator();  	// Constructor
+  ~RM_IndexScanIterator(); 	// Destructor
 
   // "key" follows the same format as in IndexManager::insertEntry()
-  RC getNextEntry(RID &rid, void *key){return -1;}  	// Get next matching entry
-  RC close(){return -1;}            			// Terminate index scan
+  RC getNextEntry(RID &rid, void *key); 	// Get next matching entry
+  RC close();            			// Terminate index scan
+
+  void set_itr(IX_ScanIterator* that_scan);
 };
 
 // RM_ScanIterator is an iteratr to go through tuples
@@ -187,6 +191,10 @@ private:
 	 * return value: the column position of this attribute
 	 */
 	int fillAttr(void* record, Attribute& attr);
+
+	string indexName(const string& tableName, const string& attrName);
+
+	Attribute getAttr(const string &tableName, const string &attributeName);
 public:
 RecordBasedFileManager* rbfm;
   static RelationManager* instance();
