@@ -129,6 +129,7 @@ bool checkCondition(Condition condition, void* data, vector<Attribute> &attrs){
 		}
 		else {
 			lengthr = (condition.rhsValue.type==0)? sizeof(int32_t):sizeof(float);
+			attrdatar = malloc(lengthr);
 			memcpy(attrdatar,condition.rhsValue.data,lengthr);
 		}
 	}
@@ -146,7 +147,7 @@ RC Filter::getNextTuple(void *data){
 	bool satisfy = false;
 	bool ifeof = false;
 	while(satisfy == false&&ifeof == false){
-		itr->getNextTuple(data);
+		ifeof = itr->getNextTuple(data);
 		satisfy = checkCondition(this->condition, data, this->attrs);
 	}
 	return (ifeof == true)?QE_EOF:0;
