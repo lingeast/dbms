@@ -111,6 +111,7 @@ class TableScan : public Iterator
 
         ~TableScan()
         {
+        	cout << "Calling table Scan deconstructor" << endl;
         	iter->close();
         };
 };
@@ -212,6 +213,8 @@ private:
 	vector<Attribute> attrs;
 	vector<Attribute> nested_attrs;
     // Projection operator
+	int fieldLen(void* data, Attribute attr);
+	Attribute findAttr(const vector<Attribute>& attrs, const string& attrName);
     public:
         Project(Iterator *input,                            // Iterator of input R
                 const vector<string> &attrNames);         // vector containing attribute names

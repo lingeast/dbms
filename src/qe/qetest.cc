@@ -490,7 +490,7 @@ int testCase_4() {
 	RC rc = success;
 	// Functions Tested
 	// 1. Filter -- IndexScan as input, on TypeReal attribute
-	cout << "****In Test Case 3****" << endl;
+	cout << "****In Test Case 4****" << endl;
 
 	IndexScan *is = new IndexScan(*rm, "right", "C");
 	float compVal = 100.0;
@@ -574,7 +574,7 @@ int testCase_5() {
 		int offset = 0;
 
 		// Print right.C
-		cout << "left.C " << *(float *) ((char *) data + offset) << endl;
+		cout << "right.C " << *(float *) ((char *) data + offset) << endl;
 		offset += sizeof(float);
 
 		// Print right.D
@@ -590,13 +590,16 @@ int testCase_5() {
 		++actualResultCnt;
 	}
 
+	cout << "Expected: " << expectedResultCnt << "Actual: " << actualResultCnt << endl;
 	if (expectedResultCnt != actualResultCnt) {
 		rc = fail;
 	}
 
 clean_up:
 	delete project;
+	cout << "delete ts in qetest5" << endl;
 	delete ts;
+	cout << "delete ts in qetest5_end" << endl;
 	free(data);
 	return rc;
 }

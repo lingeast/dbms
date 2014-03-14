@@ -433,7 +433,10 @@ RBFM_ScanIterator::~RBFM_ScanIterator(){
 }
 
 RC RBFM_ScanIterator::close() {
-	if (value != NULL) free(value);
+	if (value != NULL) {
+		free(value);
+		value = NULL;	// eliminate dangled pointer
+	}
 	return rbfm->closeFile(fileHandle);
 }
 
