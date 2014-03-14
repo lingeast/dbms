@@ -597,9 +597,7 @@ int testCase_5() {
 
 clean_up:
 	delete project;
-	cout << "delete ts in qetest5" << endl;
 	delete ts;
-	cout << "delete ts in qetest5_end" << endl;
 	free(data);
 	return rc;
 }
@@ -1489,13 +1487,13 @@ int main() {
 		g_nUndergradPoint += 5;
 		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
-/**
+
 	if (testCase_5() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
 		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
-
+/*
 	if (testCase_6() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradPoint += 10;

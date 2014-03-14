@@ -9,10 +9,11 @@
 #include <iostream>
 #include <cstring>
 #include <stdint.h>
+#include <stdexcept>
 
-varchar_key::varchar_key() : raw_data(NULL), len(0), str() {}
+varchar_key::varchar_key() : pos_inf(false), neg_inf(false), raw_data(NULL), len(0), str() {}
 
-varchar_key::varchar_key(const varchar_key &that) :
+varchar_key::varchar_key(const varchar_key &that) : pos_inf(that.pos_inf), neg_inf(that.neg_inf),
 		raw_data(NULL), len(that.len), str(that.str) {
 	this->raw_data = new char[this->len];
 	memcpy(this->raw_data, that.raw_data, this->len);
@@ -63,9 +64,20 @@ bool varchar_key::operator<(const comparable &rhs) {
     if (pRhs == NULL) { // rhs is of another type
          return false;
      } else {
-          // Do work to compare two Derived objects
-    	 return (str.compare(pRhs->str) < 0);
+    	 if (this->is_inf() && pRhs->is_inf()) {
+     		throw new std::logic_error("Comparing infinites is useless");
+     		return false;
+     	} else if (this->is_inf()) {
+     		if (pos_inf) return false;
+     		if (neg_inf) return true;
+     	} else if (pRhs->is_inf()) {
+     		if (pRhs->pos_inf) return true;
+     		if (pRhs->neg_inf) return false;
+     	} else {
+     		return (str.compare(pRhs->str) < 0);
+     	}
      }
+    return false;
 }
 
 bool varchar_key::operator==(const comparable &rhs)  {
@@ -73,13 +85,23 @@ bool varchar_key::operator==(const comparable &rhs)  {
     if (pRhs == NULL) { // rhs is of another type
          return false;
      } else {
-          // Do work to compare two Derived objects
+    	 // No equality between infinity
+    	 if (this->neg_inf || this->pos_inf || pRhs->neg_inf || pRhs->pos_inf) return false;
     	 return this->str == pRhs->str;
      }
 }
 
 void varchar_key::set_inf(int flag) {
-	return;
+	if (flag == 0) {
+		pos_inf = false;
+		neg_inf =false;
+		return;
+	}
+
+	if (is_inf())
+		throw new std::logic_error("Infinity already been set");
+	if (flag > 0) pos_inf = true;
+	else if (flag < 0) neg_inf = true;
 }
 
 

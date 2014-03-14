@@ -65,8 +65,8 @@ bool int_key::operator <(const comparable &rhs) {
     	} else {
     		return this->val < pRhs->val;
     	}
-    return false;
     }
+    return false;
 }
 
 bool int_key::operator ==(const comparable & rhs) {

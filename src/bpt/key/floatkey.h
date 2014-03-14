@@ -15,8 +15,11 @@ typedef int32_t float_key_t;
 
 class float_key: public BPlusTree::bt_key {
 private:
+	bool pos_inf;
+	bool neg_inf;
 	size_t len;
 	float_key_t val;
+	bool is_inf() const {return pos_inf || neg_inf;}
 public:
 	float_key();
 	float_key(const float_key &);

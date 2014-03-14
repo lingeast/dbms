@@ -139,10 +139,11 @@ RC IndexManager::scan(FileHandle &fileHandle,
     bool        	highKeyInclusive,
     IX_ScanIterator &ix_ScanIterator)
 {
-	cout << "IM::IndexScan on " << fileHandle.getFileName() << "'s" << attribute.name << endl;
+	//cout << "IM::IndexScan on " << fileHandle.getFileName() << " ," << attribute.name << endl;
 	FILE* tmp = fopen(fileHandle.getFileName().c_str(), "r");
 
 	if (tmp == NULL){ // check if file exists
+		cout << "IM::scan, file missing" << endl;
 		return -1;
 	} else {
 		fclose(tmp);

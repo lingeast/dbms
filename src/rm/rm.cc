@@ -1,5 +1,6 @@
 #include "rm.h"
 #include <stdio.h>
+#include <cstring>
 RM_IndexScanIterator::RM_IndexScanIterator() : ix_scan(NULL) {}
 
 RM_IndexScanIterator::~RM_IndexScanIterator() {
@@ -645,12 +646,13 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 	Attribute attr = this->getAttr(tableName, attributeName);
 	if (attr.name.empty()) // get attribute information failed
 		return -1;
+	cout << "find attr in the catalog: (" << attr.name<<"," << attr.length<<")";
 
 	// Scan table to insert attribute into index file one by one
 	RM_ScanIterator RM_itr;
 	vector<string> attributeNames;
 	attributeNames.push_back(attributeName);
-	scan(tableName,	//tableName
+	this->scan(tableName,	//tableName
 	      string("not used"),	//conditionAttribute
 	      NO_OP,				// CompOp
 	      NULL,					// void* value
@@ -666,24 +668,25 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 	RID rid;
 	char buffer[attr.length];
 	int time1 = 0;
-	cout << "In create CreateIndex" << tableName <<","<<attributeName<< endl;
-	/*
+	cout << "In create CreateIndex " << tableName << " , "<<attributeName<< endl;
+
 	while(RM_itr.getNextTuple(rid, buffer) != RM_EOF) {
 		im->insertEntry(idxFH, attr, buffer, rid);
-		cout << "time:" << ++time1 << endl;
+		//cout << "Insert " << ++time1 << ", Value = " << *(float*)buffer << endl;
 	}
-	*/
+
 
 	cout << "After create CreateIndex" << endl;
 	//TODO remove test code
+
 	/*
 	IX_ScanIterator ix_itr;
 	im->scan(idxFH, attr, NULL, NULL, true, true, ix_itr);
 	int time = 0;
-	while(ix_itr.getNextEntry(rid, buffer) != -1) {
+	while(ix_itr.getNextEntry(rid, buffer) == 0) {
 		cout << "time:" << ++time << endl;
 	}
-	*/
+	 */
 	//TODO test code end
 
 
@@ -715,23 +718,24 @@ RC RelationManager::destroyIndex(const string &tableName, const string &attribut
 	 if (attr.name.empty()) return -1;	// failed retrieve attribute type
 	 else cout << attr.name << "==" << attributeName << endl;
 
-	 cout << "Calling IM::Scan in RM::indexScan" << endl;
+	 cout << "=======In RM::indexScan, call IM::scan========" << endl;
 
 	 IX_ScanIterator* ix_scan_ptr = new IX_ScanIterator();
 	 int ret = IndexManager::instance()->scan(indexF, attr,
 			 lowKey, highKey, lowKeyInclusive, highKeyInclusive, *ix_scan_ptr);
 
 	 if (ret != 0) return -1;
-	 cout << "Calling IM::Scan in RM::indexScan END" << endl;
+	 cout << "=======In RM::indexScan, call IM::scan END========" << endl;
 
+	 /*
 	 char buffer[2000];
 	 RID rid;
 	 int time = 0;
 	 while(ix_scan_ptr->getNextEntry(rid, buffer) != -1) {
 		 cout << "IX_SCAN_ITR test: " << ++time << endl;
 	 }
+	 */
 
-	 cout << "Is IX_SCAN EMPTY? = "<< ix_scan_ptr->empty() << endl;
 	 rm_IndexScanIterator.set_itr(ix_scan_ptr);
 
 	 return 0;
