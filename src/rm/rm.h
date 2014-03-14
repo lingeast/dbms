@@ -204,6 +204,11 @@ private:
 	 * get the specific field offset in a raw record
 	 */
 	int getAttrOff(const void* record, const vector<Attribute> attrs, const string& attrName);
+
+	/*
+	 * return the max possible length specified by vector<Attribute>
+	 */
+	int recordMaxLen(const vector<Attribute>& attrs);
 public:
 RecordBasedFileManager* rbfm;
   static RelationManager* instance();

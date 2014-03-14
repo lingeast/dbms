@@ -246,6 +246,8 @@ int RawDataUtil::fieldLen(void* data, const Attribute& attr) {
 		return attr.length;
 	case TypeVarChar:
 		return *(uint32_t*)data + sizeof(uint32_t);
+	default:
+		return -1;	// indicate unsuccesful call
 	}
 }
 

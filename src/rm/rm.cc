@@ -361,6 +361,14 @@ int RelationManager::getAttrOff(const void* record, const vector<Attribute> attr
 	return -1; //indicating match failure
 }
 
+int RelationManager::recordMaxLen(const vector<Attribute>& attrs) {
+	int max_len = 0;
+	for (int i = 0; i < attrs.size(); i++) {
+		max_len += attrs[i].length;
+	}
+	return max_len;
+}
+
 RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &attrs)
 {
 	int attrSize = getTableColNum(tableName);
@@ -430,7 +438,7 @@ RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &at
 RC RelationManager::insertTuple(const string &tableName, const void *data, RID &rid)
 {
 	FileHandle tableF;
-	if (rbfm->openFile(tableName + TABLE_SUFFIX, tableF) != 0) return -1;
+
 	vector<Attribute> recDscptr;
 	if (getAttributes(tableName, recDscptr) != 0){
 		rbfm->closeFile(tableF);
@@ -438,7 +446,8 @@ RC RelationManager::insertTuple(const string &tableName, const void *data, RID &
 	}
 
 	// insert into table
-	int ret =  rbfm->insertRecord(tableF, recDscptr, data, rid);
+	if (rbfm->openFile(tableName + TABLE_SUFFIX, tableF) != 0) return -1;
+	if (rbfm->insertRecord(tableF, recDscptr, data, rid) != 0) return -1;
 	if (rbfm->closeFile(tableF) != 0) return -1;
 
 	// insert into index
@@ -449,7 +458,6 @@ RC RelationManager::insertTuple(const string &tableName, const void *data, RID &
 		string idxName(indexName(tableName, recDscptr[i].name));
 		FILE* fp = fopen(idxName.c_str(), "r");
 		if (fp != NULL) { //index file exists, insert into index file
-			//cout << "Insert into index " << idxName << " when insert tuple to " << tableName << endl;
 			fclose(fp);
 			FileHandle idxF;
 			if (im->openFile(idxName, idxF) != 0)
@@ -461,7 +469,7 @@ RC RelationManager::insertTuple(const string &tableName, const void *data, RID &
 		}
 		len += fieldLen(recData + len, recDscptr[i]);
 	}
-	return ret;
+	return 0;
 }
 
 RC RelationManager::deleteTuples(const string &tableName)
@@ -477,10 +485,39 @@ RC RelationManager::deleteTuple(const string &tableName, const RID &rid)
 	if (rbfm->openFile(tableName + TABLE_SUFFIX, tableF) != 0) return -1;
 	//vector<Attribute> recDscptr; // Not used!
 
-	int ret = rbfm->deleteRecord(tableF, vector<Attribute>(), rid);
+	vector<Attribute> recDscptr;
+	if (getAttributes(tableName, recDscptr) != 0){
+		rbfm->closeFile(tableF);
+		return -1;
+	}
+	// retrieve record first (used for deleting record in index)
+	char *recData = new char[this->recordMaxLen(recDscptr)];
+	if (rbfm->readRecord(tableF, recDscptr, rid, recData) != 0) return -1;
 
+	// delete record at table
+	if(rbfm->deleteRecord(tableF, vector<Attribute>(), rid) != 0) return -1;
 	if (rbfm->closeFile(tableF) != 0) return -1;
-	return ret;
+
+	// delete attribute  at index
+	IndexManager *im = IndexManager::instance();
+	int len = 0;
+	for (int i = 0; i < recDscptr.size(); i++) {
+		string idxName(indexName(tableName, recDscptr[i].name));
+		FILE* fp = fopen(idxName.c_str(), "r");
+		if (fp != NULL) { //index file exists, insert into index file
+			fclose(fp);
+			FileHandle idxF;
+			if (im->openFile(idxName, idxF) != 0)
+				return -1;
+			if (im->deleteEntry(idxF, recDscptr[i], (void*)(recData + len), rid) != 0)
+				return -1;
+			if (im->closeFile(idxF) != 0)
+				return -1;
+		}
+		len += fieldLen(recData + len, recDscptr[i]);
+	}
+
+	return 0;
 }
 
 RC RelationManager::updateTuple(const string &tableName, const void *data, const RID &rid)
