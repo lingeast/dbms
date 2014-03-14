@@ -1,7 +1,159 @@
 
 #include "qe.h"
 
-Filter::Filter(Iterator* input, const Condition &condition) {
+bool compareData(void* data1,void* data2, CompOp op , AttrType type, int lengthl, int lengthr){
+	switch(op){
+	case 0: {
+			switch(type){
+			case 0: return (*(int32_t*)data1 == *(int32_t*)data2);
+			case 1: return (*(float*)data1 == *(float*)data2);
+			case 2: return (lengthl==lengthr)?(memcmp(data1,data2,lengthl) == 0):0;
+			}
+			break;
+		}
+	case 1: {
+			switch(type){
+			case 0: return (*(int32_t*)data1 < *(int32_t*)data2);
+			case 1: return (*(float*)data1 < *(float*)data2);
+			case 2: return (memcmp(data1,data2,lengthl) < 0||(memcmp(data1,data2,lengthl) == 0 && lengthl < lengthr));
+			}
+			break;
+		}
+	case 2: {
+			switch(type){
+			case 0: return (*(int32_t*)data1 > *(int32_t*)data2);
+			case 1: return (*(float*)data1 > *(float*)data2);
+			case 2: return (memcmp(data1,data2,lengthl) > 0||(memcmp(data1,data2,lengthl) == 0 && lengthl > lengthr));
+			}
+			break;
+		}
+	case 3: {
+			switch(type){
+			case 0: return (*(int32_t*)data1 <= *(int32_t*)data2);
+			case 1: return (*(float*)data1 <= *(float*)data2);
+			case 2: return !(memcmp(data1,data2,lengthl) > 0||(memcmp(data1,data2,lengthl) == 0 && lengthl > lengthr));
+			}
+			break;
+		}
+	case 4: {
+			switch(type){
+			case 0: return (*(int32_t*)data1 >= *(int32_t*)data2);
+			case 1: return (*(float*)data1 >= *(float*)data2);
+			case 2: return !(memcmp(data1,data2,lengthl) < 0||(memcmp(data1,data2,lengthl) == 0 && lengthl < lengthr));
+			}
+			break;
+		}
+	case 5: {
+			switch(type){
+			case 0: return !(*(int32_t*)data1 == *(int32_t*)data2);
+			case 1: return !(*(float*)data1 == *(float*)data2);
+			case 2: return (!(memcmp(data1,data2,lengthl) == 0))||(lengthl!=lengthr);
+			}
+			break;
+		}
+	case 6: return 1;
+	}
+
+	return 0;
+}
+
+
+bool checkCondition(Condition condition, void* data, vector<Attribute> &attrs){
+	int offset = 0, attrnumr = 0, attrnuml = 0;
+	void *attrdatar,*attrdatal;
+	int findAttr = 1 + condition.bRhsIsAttr;
+	int lengthl, lengthr = 0;
+	for(int i = 0; i < attrs.size(); i++)
+		if((condition.lhsAttr).compare(attrs[i].name) == 0){
+			switch((attrs[i]).type){
+				case 0:{
+					lengthl = sizeof(int32_t);
+					attrdatal = malloc(sizeof(int32_t));
+					memcpy(attrdatal, (char*)data + offset, sizeof(int32_t));
+				}
+				break;
+				case 1:{
+					lengthl = sizeof(float);
+					attrdatal = malloc(sizeof(float));
+					memcpy(attrdatal, (char*)data + offset, sizeof(float));
+				}
+				break;
+				case 2:{
+					lengthl = *(int32_t*)((char*)data + offset);
+					attrdatal = malloc(lengthl);
+					memcpy(attrdatal, (char*)data + offset + sizeof(int32_t), lengthl);
+				}
+				break;
+			}
+			findAttr -= 1;
+			attrnuml = i;
+			if (findAttr == 0) break;
+		}else{
+			if(condition.bRhsIsAttr && (condition.rhsAttr).compare(attrs[i].name) == 0){
+				switch((attrs[i]).type){
+					case 0:{
+						lengthr = sizeof(int32_t);
+						attrdatar = malloc(sizeof(int32_t));
+						memcpy(attrdatar, (char*)data + offset, sizeof(int32_t));
+					}
+					break;
+					case 1:{
+						lengthr = sizeof(float);
+						attrdatar = malloc(sizeof(float));
+						memcpy(attrdatar, (char*)data + offset, sizeof(float));
+					}
+					break;
+					case 2:{
+						lengthr = *(int32_t*)((char*)data + offset);
+						attrdatar = malloc(lengthr);
+						memcpy(attrdatar, (char*)data + offset + sizeof(int32_t), lengthr);
+					}
+					break;
+				}
+				findAttr -= 1;
+				attrnumr = i;
+				if (findAttr == 0) break;
+			}
+			switch((attrs[i]).type){
+				case 0: offset += sizeof(int32_t); break;
+				case 1: offset += sizeof(float); break;
+				case 2: offset += sizeof(int32_t) + *(int32_t*)((char*)data + offset); break;
+			}
+		}
+
+	if (condition.bRhsIsAttr != true){
+		if (condition.rhsValue.type == 2){
+			lengthr = *(int32_t*)(condition.rhsValue.data);
+			attrdatar = malloc(lengthr);
+			memcpy(attrdatar,(char*)condition.rhsValue.data + sizeof(int32_t), lengthr);
+		}
+		else {
+			lengthr = (condition.rhsValue.type==0)? sizeof(int32_t):sizeof(float);
+			memcpy(attrdatar,condition.rhsValue.data,lengthr);
+		}
+	}
+	return compareData(attrdatal,attrdatar,condition.op,attrs[attrnuml].type,lengthl,lengthr);
+
+}
+
+
+Filter::Filter(Iterator* input, const Condition &condition):condition(condition), itr(input){
+	itr->getAttributes(this->attrs);
+	this->attrName = condition.lhsAttr;
+}
+
+RC Filter::getNextTuple(void *data){
+	bool satisfy = false;
+	bool ifeof = false;
+	while(satisfy == false&&ifeof == false){
+		itr->getNextTuple(data);
+		satisfy = checkCondition(this->condition, data, this->attrs);
+	}
+	return (ifeof == true)?QE_EOF:0;
+}
+
+void Filter::getAttributes(vector<Attribute> &attrs) const{
+	itr->getAttributes(attrs);
 }
 
 // ... the rest of your implementations go here

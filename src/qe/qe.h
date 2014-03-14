@@ -195,15 +195,21 @@ class IndexScan : public Iterator
 
 class Filter : public Iterator {
     // Filter operator
+	private:
+		Condition condition;
+		Iterator *itr;
     public:
         Filter(Iterator *input,                         // Iterator of input R
                const Condition &condition               // Selection condition
         );
         ~Filter(){};
 
-        RC getNextTuple(void *data) {return QE_EOF;};
+        string attrName;
+        vector<Attribute> attrs;
+
+        RC getNextTuple(void *data);
         // For attribute in vector<Attribute>, name it as rel.attr
-        void getAttributes(vector<Attribute> &attrs) const{};
+        void getAttributes(vector<Attribute> &attrs) const;
 };
 
 
