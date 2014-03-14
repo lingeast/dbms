@@ -289,4 +289,11 @@ class Aggregate : public Iterator {
         void getAttributes(vector<Attribute> &attrs) const{};
 };
 
+class RawDataUtil {
+public:
+	static int fieldLen(void* data, const Attribute attr);
+	static int recordLen(void* data, const vector<Attribute>& attrs);
+	static int recordMaxLen(const vector<Attribute>& attrs);
+};
+
 #endif

@@ -235,3 +235,32 @@ int Project::fieldLen(void* data, Attribute attr) {
 		return *(uint32_t*)data + sizeof(uint32_t);
 	}
 }
+
+int RawDataUtil::fieldLen(void* data, Attribute attr) {
+	//cout << "In RDU fieldLen" << endl;
+	switch(attr.type) {
+	case TypeInt:
+		return attr.length;
+	case TypeReal:
+		return attr.length;
+	case TypeVarChar:
+		return *(uint32_t*)data + sizeof(uint32_t);
+	}
+}
+
+int RawDataUtil::recordLen(void* data, const vector<Attribute>& attrs) {
+	char* off_data = (char*) data;
+	int len = 0;
+	for(int i = 0; i < attrs.size(); i++) {
+		len += fieldLen(off_data + len, attrs[i]);
+	}
+	return len;
+}
+
+int RawDataUtil::recordMaxLen(const vector<Attribute>& attrs) {
+	int max_len = 0;
+	for (int i = 0; i < attrs.size(); i++) {
+		max_len += attrs[i].length;
+	}
+	return max_len;
+}
