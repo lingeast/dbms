@@ -448,10 +448,10 @@ int testCase_3() {
 
 	// Create Filter
 	Filter *filter = new Filter(ts, cond);
-
 	// Go over the data through iterator
 	void *data = malloc(bufSize);
 	while (filter->getNextTuple(data) != QE_EOF) {
+		cout<<"current"<<endl;
 		int offset = 0;
 		// Print left.A
 		cout << "left.A " << *(int *) ((char *) data + offset) << endl;
@@ -1489,7 +1489,7 @@ int main() {
 		g_nUndergradPoint += 5;
 		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
-
+/**
 	if (testCase_5() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
@@ -1590,7 +1590,7 @@ int main() {
 		g_nUndergradExtraPoint += 5;
     }
 
-
+**/
 	print_point: cout << "grad-point: " << g_nGradPoint
 			<< "\t grad-extra-point: " << g_nGradExtraPoint << endl;
 	cout << "undergrad-point: " << g_nUndergradPoint
