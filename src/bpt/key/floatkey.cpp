@@ -90,6 +90,7 @@ bool float_key::operator<(const comparable &rhs) {
     		return *this < *pRhs;
     	}
     }
+    return false;
 }
 bool float_key::operator==(const comparable &rhs) {
     const float_key *pRhs = dynamic_cast<const float_key *>(&rhs);
