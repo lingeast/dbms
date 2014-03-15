@@ -90,7 +90,8 @@ class TableScan : public Iterator
 
         RC getNextTuple(void *data)
         {
-            return iter->getNextTuple(rid, data);
+
+        	return iter->getNextTuple(rid, data);
         };
 
         void getAttributes(vector<Attribute> &attrs) const
@@ -256,6 +257,8 @@ class NLJoin : public Iterator {
 		int Ldatalen;
 		int Lattrlen;
 		AttrType type;
+		int round;
+		int count;
 		int getAttr(void* data, string attrname, vector<Attribute> list, int &attrlen, int &datalen);
 	public:
         NLJoin(Iterator *leftIn,                             // Iterator of input R

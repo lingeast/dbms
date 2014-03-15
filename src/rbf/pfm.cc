@@ -475,6 +475,8 @@ int FileHandle::getAddr(PageNum pageNum) {
 	PageDirHandle pdh(INIT_DIR_OFFSET, file);
 	int pageIndex = pageNum;
 	while(pageIndex >= PAGE_DIR_SIZE) {
+		if (pdh.nextDir()<0)
+			return -1;
 		pdh.readNewDir(pdh.nextDir(), file);
 		pageIndex -= PAGE_DIR_SIZE;
 	}

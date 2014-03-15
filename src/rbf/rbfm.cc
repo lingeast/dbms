@@ -577,9 +577,6 @@ RC RBFM_ScanIterator::compareRecord(void* data1, const void *data2, int length){
 
 RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 	//cout << "getNextRecord Begin" << endl;
-	if(rid.slotNum == 145){
-		int i =1;
-	}
 	char tempdata[PAGE_SIZE];
 	RC ret = -1;
 	int flag = 0;

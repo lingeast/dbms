@@ -82,11 +82,6 @@ bool checkCondition(Condition condition, void* data, vector<Attribute> &attrs){
 					lengthl = *(int32_t*)((char*)data + offset);
 					attrdatal = malloc(lengthl);
 					memcpy(attrdatal, (char*)data + offset + sizeof(int32_t), lengthl);
-					cout<<"get new attr:"<<endl;
-					for(int k = 0;k<lengthl;k++){
-						cout<<*((char*)attrdatal + k);
-					}
-					cout<<endl;
 				}
 				break;
 			}
@@ -276,7 +271,7 @@ NLJoin::NLJoin(Iterator *leftIn,                             // Iterator of inpu
                TableScan *rightIn,                           // TableScan Iterator of input S
                const Condition &condition,                   // Join condition
                const unsigned numPages                       // Number of pages can be used to do join (decided by the optimizer)
-        ): LItr(leftIn),RItr(rightIn),condition(condition),numPages(numPages),Ldata(NULL),Lattr(NULL),Ldatalen(0),Lattrlen(0),type(TypeInt){
+        ): LItr(leftIn),RItr(rightIn),condition(condition),numPages(numPages),Ldata(NULL),Lattr(NULL),Ldatalen(0),Lattrlen(0),type(TypeInt),round(0),count(0){
 	LItr->getAttributes(this->LattrList);
 	RItr->getAttributes(this->RattrList);
 };
@@ -296,8 +291,10 @@ int NLJoin::getAttr(void* data, string attrname, vector<Attribute> list,int &att
 				this->type = list[i].type;
 			}
 		}
-		if(list[i].type == 2)
+		if(list[i].type == 2){
 			offset += *(int32_t*)((char*)(data) + offset);
+			offset += sizeof(int32_t);
+		}
 		else offset += (list[i].type == 0)? sizeof(int32_t):sizeof(float);
 	}
 	datalen = offset;
@@ -316,9 +313,12 @@ RC NLJoin::getNextTuple(void *data){
 		Ldata = malloc(Ldatalen);
 		memcpy(Ldata,data,Ldatalen);
 	}
-	int round = 0;
+	if(round == 0){
+		int j = 1;
+	}
+	int flag = 0;
 	do{
-		if (round!=0){
+		if (flag!=0){
 			attrpos = getAttr(data,condition.lhsAttr,LattrList,Lattrlen,Ldatalen);
 			Lattr = malloc(Lattrlen);
 			memcpy(Lattr,(char*)data + attrpos, Lattrlen);
@@ -334,6 +334,7 @@ RC NLJoin::getNextTuple(void *data){
 			if(compareData(Lattr, Rattr, condition.op, this->type, Lattrlen, Rattrlen)==true){
 				memcpy(data,Ldata,Ldatalen);
 				memcpy((char*)data + Ldatalen,Rdata,Rdatalen);
+				count ++;
 				return 0;
 			}
 			free(Rdata);
@@ -343,7 +344,11 @@ RC NLJoin::getNextTuple(void *data){
 		free(Lattr);
 		Ldatalen = 0;
 		Lattrlen = 0;
-		round = 1;
+		flag = 1;
+		//cout<<"round: "<<round<<" find "<<count<<endl;
+		count = 0;
+		round += 1;
+		RItr->setIterator();
 	}while(LItr->getNextTuple(data)!=QE_EOF);
 	return QE_EOF;
 }
