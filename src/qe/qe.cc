@@ -145,12 +145,12 @@ Filter::Filter(Iterator* input, const Condition &condition):condition(condition)
 
 RC Filter::getNextTuple(void *data){
 	bool satisfy = false;
-	bool ifeof = false;
-	while(satisfy == false&&ifeof == false){
+	int ifeof = 0;
+	while(satisfy == false&&ifeof == 0){
 		ifeof = itr->getNextTuple(data);
 		satisfy = checkCondition(this->condition, data, this->attrs);
 	}
-	return (ifeof == true)?QE_EOF:0;
+	return (ifeof == -1)?QE_EOF:0;
 }
 
 void Filter::getAttributes(vector<Attribute> &attrs) const{
@@ -266,4 +266,81 @@ int RawDataUtil::recordMaxLen(const vector<Attribute>& attrs) {
 		max_len += attrs[i].length;
 	}
 	return max_len;
+}
+NLJoin::NLJoin(Iterator *leftIn,                             // Iterator of input R
+               TableScan *rightIn,                           // TableScan Iterator of input S
+               const Condition &condition,                   // Join condition
+               const unsigned numPages                       // Number of pages can be used to do join (decided by the optimizer)
+        ): LItr(leftIn),RItr(rightIn),condition(condition),numPages(numPages),Ldata(NULL),Lattr(NULL),Ldatalen(0),Lattrlen(0),type(TypeInt){
+	LItr->getAttributes(this->LattrList);
+	RItr->getAttributes(this->RattrList);
+};
+
+void NLJoin::getAttr(void* data, string attrname, void* attr, vector<Attribute> list,int &attrlen, int &datalen){
+	int offset = 0;
+	for(int i = 0; i < list.size(); i++){
+		if(attrname.compare(list[i].name) == 0){
+			if(list[i].type == 2){
+				attrlen = *(int32_t*)((char*)(data) + offset);
+				attr = malloc(attrlen);
+				memcpy(attr,(char*)data + offset + sizeof(int32_t),attrlen);
+				this->type = list[i].type;
+			}else{
+				attrlen = list[i].type == 0? sizeof(int32_t):sizeof(float);
+				memcpy(attr,(char*)data + offset, attrlen);
+				this->type = list[i].type;
+			}
+		}
+		if(list[i].type == 2)
+			offset += *(int32_t*)((char*)(data) + offset);
+		else offset += (list[i].type == 0)? sizeof(int32_t):sizeof(float);
+	}
+	datalen = offset;
+}
+
+RC NLJoin::getNextTuple(void *data){
+	void *Rattr,*Rdata;
+	int Rattrlen = 0,Rdatalen = 0;
+	if(Ldata == NULL){
+		if(LItr->getNextTuple(data) == QE_EOF)
+			return QE_EOF;
+		getAttr(data,condition.lhsAttr,Lattr,LattrList,Lattrlen,Ldatalen);
+		Ldata = malloc(Ldatalen);
+		memcpy(Ldata,data,Ldatalen);
+	}
+	int round = 0;
+	do{
+		if (round!=0){
+			getAttr(data,condition.lhsAttr,Lattr,LattrList,Lattrlen,Ldatalen);
+			Ldata = malloc(Ldatalen);
+			memcpy(Ldata,data,Ldatalen);
+		}
+		while(RItr->getNextTuple(data)!=QE_EOF){
+			getAttr(data,condition.rhsAttr,Rattr,RattrList,Rattrlen,Rdatalen);
+			Rdata = malloc(Rdatalen);
+			memcpy(Rdata,data,Rdatalen);
+			if(compareData(Lattr, Rattr, condition.op, this->type, Lattrlen, Rattrlen)==true){
+				memcpy(data,Ldata,Ldatalen);
+				memcpy((char*)data + Ldatalen,Rdata,Rdatalen);
+				return 0;
+			}
+			free(Rdata);
+			free(Rattr);
+		}
+		free(Ldata);
+		free(Lattr);
+		Ldatalen = 0;
+		Lattrlen = 0;
+		round = 1;
+	}while(LItr->getNextTuple(data)!=QE_EOF);
+	return QE_EOF;
+}
+
+void NLJoin::getAttributes(vector<Attribute> &attrs) const{
+	for(int i = 0; i < LattrList.size(); i++){
+		attrs.push_back(LattrList[i]);
+	}
+	for(int i = 0; i < RattrList.size(); i++){
+			attrs.push_back(RattrList[i]);
+	}
 }
