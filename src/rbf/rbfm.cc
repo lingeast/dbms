@@ -608,6 +608,7 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 				rid.slotNum = currentRID.slotNum;
 				rid.pageNum = currentRID.pageNum;
 				currentRID.slotNum ++;
+				break;
 			}else
 			if (ret == 2){
 				// find real record
@@ -616,6 +617,7 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data){
 				rid.slotNum = currentRID.slotNum;
 				rid.pageNum = currentRID.pageNum;
 				currentRID.slotNum ++;
+				break;
 			}
 		}
 		int attroffset = 0;

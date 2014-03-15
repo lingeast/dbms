@@ -146,11 +146,11 @@ Filter::Filter(Iterator* input, const Condition &condition):condition(condition)
 RC Filter::getNextTuple(void *data){
 	bool satisfy = false;
 	int ifeof = 0;
-	while(satisfy == false&&ifeof == 0){
+	while(satisfy == false&&ifeof != QE_EOF){
 		ifeof = itr->getNextTuple(data);
 		satisfy = checkCondition(this->condition, data, this->attrs);
 	}
-	return (ifeof == -1)?QE_EOF:0;
+	return (ifeof == QE_EOF)?QE_EOF:0;
 }
 
 void Filter::getAttributes(vector<Attribute> &attrs) const{
@@ -271,57 +271,70 @@ NLJoin::NLJoin(Iterator *leftIn,                             // Iterator of inpu
                TableScan *rightIn,                           // TableScan Iterator of input S
                const Condition &condition,                   // Join condition
                const unsigned numPages                       // Number of pages can be used to do join (decided by the optimizer)
-        ): LItr(leftIn),RItr(rightIn),condition(condition),numPages(numPages),Ldata(NULL),Lattr(NULL),Ldatalen(0),Lattrlen(0),type(TypeInt){
+        ): LItr(leftIn),RItr(rightIn),condition(condition),numPages(numPages),Ldata(NULL),Lattr(NULL),Ldatalen(0),Lattrlen(0),type(TypeInt),round(0),count(0){
 	LItr->getAttributes(this->LattrList);
 	RItr->getAttributes(this->RattrList);
 };
 
-void NLJoin::getAttr(void* data, string attrname, void* attr, vector<Attribute> list,int &attrlen, int &datalen){
+int NLJoin::getAttr(void* data, string attrname, vector<Attribute> list,int &attrlen, int &datalen){
 	int offset = 0;
+	int attrpos = 0;
 	for(int i = 0; i < list.size(); i++){
 		if(attrname.compare(list[i].name) == 0){
 			if(list[i].type == 2){
 				attrlen = *(int32_t*)((char*)(data) + offset);
-				attr = malloc(attrlen);
-				memcpy(attr,(char*)data + offset + sizeof(int32_t),attrlen);
+				attrpos = offset;
 				this->type = list[i].type;
 			}else{
 				attrlen = list[i].type == 0? sizeof(int32_t):sizeof(float);
-				memcpy(attr,(char*)data + offset, attrlen);
+				attrpos = offset;
 				this->type = list[i].type;
 			}
 		}
-		if(list[i].type == 2)
+		if(list[i].type == 2){
 			offset += *(int32_t*)((char*)(data) + offset);
+			offset += sizeof(int32_t);
+		}
 		else offset += (list[i].type == 0)? sizeof(int32_t):sizeof(float);
 	}
 	datalen = offset;
+	return attrpos;
 }
 
 RC NLJoin::getNextTuple(void *data){
 	void *Rattr,*Rdata;
-	int Rattrlen = 0,Rdatalen = 0;
+	int Rattrlen = 0,Rdatalen = 0,attrpos = 0;
 	if(Ldata == NULL){
 		if(LItr->getNextTuple(data) == QE_EOF)
 			return QE_EOF;
-		getAttr(data,condition.lhsAttr,Lattr,LattrList,Lattrlen,Ldatalen);
+		attrpos = getAttr(data,condition.lhsAttr,LattrList,Lattrlen,Ldatalen);
+		Lattr = malloc(Lattrlen);
+		memcpy(Lattr,(char*)data + attrpos, Lattrlen);
 		Ldata = malloc(Ldatalen);
 		memcpy(Ldata,data,Ldatalen);
 	}
-	int round = 0;
+	if(round == 0){
+		int j = 1;
+	}
+	int flag = 0;
 	do{
-		if (round!=0){
-			getAttr(data,condition.lhsAttr,Lattr,LattrList,Lattrlen,Ldatalen);
+		if (flag!=0){
+			attrpos = getAttr(data,condition.lhsAttr,LattrList,Lattrlen,Ldatalen);
+			Lattr = malloc(Lattrlen);
+			memcpy(Lattr,(char*)data + attrpos, Lattrlen);
 			Ldata = malloc(Ldatalen);
 			memcpy(Ldata,data,Ldatalen);
 		}
 		while(RItr->getNextTuple(data)!=QE_EOF){
-			getAttr(data,condition.rhsAttr,Rattr,RattrList,Rattrlen,Rdatalen);
+			attrpos = getAttr(data,condition.rhsAttr,RattrList,Rattrlen,Rdatalen);
+			Rattr = malloc(Rattrlen);
+			memcpy(Rattr,(char*)data + attrpos, Rattrlen);
 			Rdata = malloc(Rdatalen);
 			memcpy(Rdata,data,Rdatalen);
 			if(compareData(Lattr, Rattr, condition.op, this->type, Lattrlen, Rattrlen)==true){
 				memcpy(data,Ldata,Ldatalen);
 				memcpy((char*)data + Ldatalen,Rdata,Rdatalen);
+				count ++;
 				return 0;
 			}
 			free(Rdata);
@@ -331,7 +344,11 @@ RC NLJoin::getNextTuple(void *data){
 		free(Lattr);
 		Ldatalen = 0;
 		Lattrlen = 0;
-		round = 1;
+		flag = 1;
+		//cout<<"round: "<<round<<" find "<<count<<endl;
+		count = 0;
+		round += 1;
+		RItr->setIterator();
 	}while(LItr->getNextTuple(data)!=QE_EOF);
 	return QE_EOF;
 }
