@@ -439,6 +439,7 @@ RC RelationManager::insertTuple(const string &tableName, const void *data, RID &
 		return -1;
 	}
 
+	//cout << "Insert into " << tableName << endl;
 	// insert into table
 	if (rbfm->openFile(tableName + TABLE_SUFFIX, tableF) != 0) return -1;
 	if (rbfm->insertRecord(tableF, recDscptr, data, rid) != 0) {

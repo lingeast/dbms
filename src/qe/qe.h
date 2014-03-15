@@ -256,7 +256,7 @@ class NLJoin : public Iterator {
 		int Ldatalen;
 		int Lattrlen;
 		AttrType type;
-		void getAttr(void* data, string attrname, void* attr, vector<Attribute> list, int &attrlen, int &datalen);
+		int getAttr(void* data, string attrname, vector<Attribute> list, int &attrlen, int &datalen);
 	public:
         NLJoin(Iterator *leftIn,                             // Iterator of input R
                TableScan *rightIn,                           // TableScan Iterator of input S
