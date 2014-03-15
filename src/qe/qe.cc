@@ -209,7 +209,7 @@ RC Project::getNextTuple(void *data) {
 		char* off_buf = buffer;
 		for (int j = 0; j < nested_attrs.size(); j++) {
 			Attribute& nest_attr= nested_attrs[j];
-			int len = fieldLen(off_buf, nest_attr);
+			int len = RawDataUtil::fieldLen(off_buf, nest_attr);
 			if (attrs[i].name != nest_attr.name) {
 				off_buf += len;
 			} else {	// reach wanted field
@@ -225,8 +225,8 @@ RC Project::getNextTuple(void *data) {
 	return 0;
 }
 
-
-int Project::fieldLen(void* data, Attribute attr) {
+/*
+int fieldLen(void* data, const Attribute attr) {
 	switch(attr.type) {
 	case TypeInt:
 		return attr.length;
@@ -235,9 +235,9 @@ int Project::fieldLen(void* data, Attribute attr) {
 	case TypeVarChar:
 		return *(uint32_t*)data + sizeof(uint32_t);
 	}
-}
+}*/
 
-int RawDataUtil::fieldLen(void* data, Attribute attr) {
+int RawDataUtil::fieldLen(void* data, const Attribute& attr) {
 	//cout << "In RDU fieldLen" << endl;
 	switch(attr.type) {
 	case TypeInt:

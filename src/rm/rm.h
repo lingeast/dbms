@@ -195,6 +195,15 @@ private:
 	string indexName(const string& tableName, const string& attrName);
 
 	Attribute getAttr(const string &tableName, const string &attributeName);
+
+	/*
+	 * get fieldlen of a field
+	 */
+	int fieldLen(void* data, const Attribute& attr);
+	/*
+	 * get the specific field offset in a raw record
+	 */
+	int getAttrOff(const void* record, const vector<Attribute> attrs, const string& attrName);
 public:
 RecordBasedFileManager* rbfm;
   static RelationManager* instance();

@@ -70,6 +70,8 @@ private:
   IX_ScanIterator();			// Constructor
   ~IX_ScanIterator(); 							// Destructor
 
+  bool empty() const {return scan_itr == NULL;}
+
   RC getNextEntry(RID &rid, void *key);  		// Get next matching entry
   RC close();             						// Terminate index scan
   void set_itr(bpt_scan_itr* that);

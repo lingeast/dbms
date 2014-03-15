@@ -15,11 +15,16 @@ namespace BPlusTree {
 
 bpt_scan_itr::bpt_scan_itr(std::string fname, bt_key* lok, bt_key* hik, bool lo_in, bool hi_in):
 		file(fopen(fname.c_str(),"r")), fhelp(file),
-		lo_inc(lo_in), hi_inc(hi_in), offset(0), key_itr(lok->clone()), hi_key(hik->clone()) {
+		lo_inc(lo_in), hi_inc(hi_in), offset(0), key_itr(lok->clone()), hi_key(hik->clone()),
+		is_empty(false) {
 	// TODO Auto-generated constructor stub
 	key_itr->set_inf(0);
 	fhelp.read_page(0, this->dir.page_block()); // read in dir page
 
+	if (dir.root() < 1) {
+		is_empty = true;
+		return;
+	}
 	cur_leaf.set_id(dir.root()); // read in root page
 	fhelp.read_page(dir[cur_leaf.page_id()], cur_leaf.page_block());
 
@@ -58,7 +63,12 @@ int bpt_scan_itr::begin_offset(const page_node& pg, bt_key *lok, bool lo_in) {
 int bpt_scan_itr::get_next(RID& rid, void* key) {
 
 	if (this->file == NULL || this->key_itr == NULL || this->hi_key == NULL) {
-		// *this has been already closed
+		// this has been already closed
+		return SCAN_EOF;
+	}
+
+	if (is_empty) {
+		// detected empty when opening
 		return SCAN_EOF;
 	}
 	//std::cout << "In page " << cur_leaf.page_id() << " , offset = " << offset << std::endl;

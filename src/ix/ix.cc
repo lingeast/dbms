@@ -139,6 +139,7 @@ RC IndexManager::scan(FileHandle &fileHandle,
     bool        	highKeyInclusive,
     IX_ScanIterator &ix_ScanIterator)
 {
+	cout << "IM::IndexScan on " << fileHandle.getFileName() << "'s" << attribute.name << endl;
 	FILE* tmp = fopen(fileHandle.getFileName().c_str(), "r");
 
 	if (tmp == NULL){ // check if file exists
@@ -180,6 +181,7 @@ RC IndexManager::scan(FileHandle &fileHandle,
 
 	// A newly created B+ tree object to be passed into ix_ScanIterator
 	// its life cycle controlled by ix_ScanIterator object
+
 	bpt_scan_itr* bsi = new bpt_scan_itr(fileHandle.getFileName(), lowk, hik,
 			lowKeyInclusive, highKeyInclusive);
 

@@ -143,6 +143,16 @@ class IndexScan : public Iterator
             iter = new RM_IndexScanIterator();
             rm.indexScan(tableName, attrName, NULL, NULL, true, true, *iter);
 
+            /*
+            //TODO: del test code
+            char key[100];
+            int times = 0;
+            RID rid;
+            while(iter->getNextEntry(rid, key) != -1) {
+            	cout << "time: " << ++times << endl;
+            }
+            //TODO: test code end
+             */
             // Set alias
             if(alias) this->tableName = alias;
         };
@@ -291,7 +301,7 @@ class Aggregate : public Iterator {
 
 class RawDataUtil {
 public:
-	static int fieldLen(void* data, const Attribute attr);
+	static int fieldLen(void* data, const Attribute& attr);
 	static int recordLen(void* data, const vector<Attribute>& attrs);
 	static int recordMaxLen(const vector<Attribute>& attrs);
 };

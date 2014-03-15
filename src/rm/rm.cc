@@ -1,4 +1,5 @@
 #include "rm.h"
+#include <stdio.h>
 RM_IndexScanIterator::RM_IndexScanIterator() : ix_scan(NULL) {}
 
 RM_IndexScanIterator::~RM_IndexScanIterator() {
@@ -324,6 +325,41 @@ Attribute RelationManager::getAttr(const string &tableName, const string &attrib
 	return attr;
 }
 
+int RelationManager::fieldLen(void* data, const Attribute& attr) {
+	//cout << "In RDU fieldLen" << endl;
+	switch(attr.type) {
+	case TypeInt:
+		return attr.length;
+	case TypeReal:
+		return attr.length;
+	case TypeVarChar:
+		return *(uint32_t*)data + sizeof(uint32_t);
+	default:
+		assert(false);
+	}
+
+}
+
+int RelationManager::getAttrOff(const void* record, const vector<Attribute> attrs, const string& attrName) {
+	int len = 0;
+	char* data = (char*) record;
+
+	for (int i = 0; i < attrs.size(); i++) {
+		if(attrs[i].name == attrName) return len;
+		else {
+			switch(attrs[i].type) {
+			case TypeInt:
+				len += attrs[i].length; break;
+			case TypeReal:
+				len += attrs[i].length; break;
+			case TypeVarChar:
+				len += *(uint32_t*)(data + len) + sizeof(uint32_t);
+			}
+		}
+	}
+	return -1; //indicating match failure
+}
+
 RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &attrs)
 {
 	int attrSize = getTableColNum(tableName);
@@ -399,8 +435,31 @@ RC RelationManager::insertTuple(const string &tableName, const void *data, RID &
 		rbfm->closeFile(tableF);
 		return -1;
 	}
+
+	// insert into table
 	int ret =  rbfm->insertRecord(tableF, recDscptr, data, rid);
 	if (rbfm->closeFile(tableF) != 0) return -1;
+
+	// insert into index
+	IndexManager *im = IndexManager::instance();
+	char *recData = (char*) data;
+	int len = 0;
+	for (int i = 0; i < recDscptr.size(); i++) {
+		string idxName(indexName(tableName, recDscptr[i].name));
+		FILE* fp = fopen(idxName.c_str(), "r");
+		if (fp != NULL) { //index file exists, insert into index file
+			//cout << "Insert into index " << idxName << " when insert tuple to " << tableName << endl;
+			fclose(fp);
+			FileHandle idxF;
+			if (im->openFile(idxName, idxF) != 0)
+				return -1;
+			if (im->insertEntry(idxF, recDscptr[i], recData + len, rid) != 0)
+				return -1;
+			if (im->closeFile(idxF) != 0)
+				return -1;
+		}
+		len += fieldLen(recData + len, recDscptr[i]);
+	}
 	return ret;
 }
 
@@ -605,10 +664,27 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 	if (im->openFile(idxName, idxFH) != 0) return -1;
 
 	RID rid;
-	char buffer[200];
+	char buffer[attr.length];
+	int time1 = 0;
+	cout << "In create CreateIndex" << tableName <<","<<attributeName<< endl;
+	/*
 	while(RM_itr.getNextTuple(rid, buffer) != RM_EOF) {
 		im->insertEntry(idxFH, attr, buffer, rid);
+		cout << "time:" << ++time1 << endl;
 	}
+	*/
+
+	cout << "After create CreateIndex" << endl;
+	//TODO remove test code
+	/*
+	IX_ScanIterator ix_itr;
+	im->scan(idxFH, attr, NULL, NULL, true, true, ix_itr);
+	int time = 0;
+	while(ix_itr.getNextEntry(rid, buffer) != -1) {
+		cout << "time:" << ++time << endl;
+	}
+	*/
+	//TODO test code end
 
 
 	return 0;
@@ -630,17 +706,34 @@ RC RelationManager::destroyIndex(const string &tableName, const string &attribut
  {
 	 IndexManager* im = IndexManager::instance();
 	 FileHandle indexF;
+
+
 	 if (im->openFile(indexName(tableName, attributeName), indexF) != 0)
 		 return -1;	// failed on index file
-	 IX_ScanIterator* ix_scan_ptr = new IX_ScanIterator();
 
 	 Attribute attr = this->getAttr(tableName, attributeName);
 	 if (attr.name.empty()) return -1;	// failed retrieve attribute type
+	 else cout << attr.name << "==" << attributeName << endl;
 
-	 IndexManager::instance()->scan(indexF, attr,
+	 cout << "Calling IM::Scan in RM::indexScan" << endl;
+
+	 IX_ScanIterator* ix_scan_ptr = new IX_ScanIterator();
+	 int ret = IndexManager::instance()->scan(indexF, attr,
 			 lowKey, highKey, lowKeyInclusive, highKeyInclusive, *ix_scan_ptr);
 
+	 if (ret != 0) return -1;
+	 cout << "Calling IM::Scan in RM::indexScan END" << endl;
+
+	 char buffer[2000];
+	 RID rid;
+	 int time = 0;
+	 while(ix_scan_ptr->getNextEntry(rid, buffer) != -1) {
+		 cout << "IX_SCAN_ITR test: " << ++time << endl;
+	 }
+
+	 cout << "Is IX_SCAN EMPTY? = "<< ix_scan_ptr->empty() << endl;
 	 rm_IndexScanIterator.set_itr(ix_scan_ptr);
+
 	 return 0;
 
  }

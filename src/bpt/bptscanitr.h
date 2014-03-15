@@ -26,6 +26,7 @@ private:
 	bt_key* hi_key;
 	dir_page dir;
 	page_node cur_leaf;
+	bool is_empty;
 
 	int begin_offset(const page_node&, bt_key *lok, bool lo_in);
 public:
