@@ -1493,13 +1493,13 @@ int main() {
 		g_nUndergradPoint += 3;
 		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
-/*
+
 	if (testCase_6() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradPoint += 10;
 		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
-
+/*
 	if (testCase_7() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradExtraPoint += 3;

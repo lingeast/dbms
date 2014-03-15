@@ -273,18 +273,31 @@ class NLJoin : public Iterator {
 
 class INLJoin : public Iterator {
     // Index Nested-Loop join operator
-    public:
+private:
+	Iterator *lItr;
+	IndexScan* is;
+	Condition cond;
+	const unsigned pageLim;
+	char* jBuf;
+	char* lBuf;
+	char* rBuf;
+	bool reachEnd;
+	vector<Attribute> lAttrs;
+	vector<Attribute> rAttrs;
+	vector<Attribute> jAttrs;
+	bool increPair();
+public:
         INLJoin(Iterator *leftIn,                               // Iterator of input R
                 IndexScan *rightIn,                             // IndexScan Iterator of input S
                 const Condition &condition,                     // Join condition
                 const unsigned numPages                         // Number of pages can be used to do join (decided by the optimizer)
-        ){};
+        );
 
-        ~INLJoin(){};
+        ~INLJoin();
 
-        RC getNextTuple(void *data){return QE_EOF;};
+        RC getNextTuple(void *data);
         // For attribute in vector<Attribute>, name it as rel.attr
-        void getAttributes(vector<Attribute> &attrs) const{};
+        void getAttributes(vector<Attribute> &attrs) const;
 };
 
 

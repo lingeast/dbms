@@ -344,3 +344,58 @@ void NLJoin::getAttributes(vector<Attribute> &attrs) const{
 			attrs.push_back(RattrList[i]);
 	}
 }
+
+INLJoin::INLJoin(Iterator *leftIn,                               // Iterator of input R
+        IndexScan *rightIn,                             // IndexScan Iterator of input S
+        const Condition &condition,                     // Join condition
+        const unsigned numPages                         // Number of pages can be used to do join (decided by the optimizer)
+) : lItr(leftIn), is(rightIn),
+		cond(condition), pageLim(numPages),
+		jBuf(NULL), lBuf(NULL), rBuf(NULL), reachEnd(false) {
+	lItr->getAttributes(lAttrs);
+	is->getAttributes(rAttrs);
+	this->jAttrs = lAttrs;
+	this->jAttrs.insert(jAttrs.end(), rAttrs.begin(), rAttrs.end());
+	cout << "jBuffer Size = " << RawDataUtil::recordMaxLen(jAttrs) << endl;
+	jBuf = new char[RawDataUtil::recordMaxLen(jAttrs)];
+	cout << "lBuffer Size = " << RawDataUtil::recordMaxLen(lAttrs) << endl;
+	lBuf = new char[RawDataUtil::recordMaxLen(lAttrs)];
+	cout << "lBuffer Size = " << RawDataUtil::recordMaxLen(rAttrs) << endl;
+	rBuf = new char[RawDataUtil::recordMaxLen(rAttrs)];
+	if (leftIn->getNextTuple(lBuf) == -1) {	// leftItr is completely empty
+		reachEnd = true;
+	}
+}
+INLJoin::~INLJoin() {
+	if (lBuf != NULL) delete[] lBuf;
+	if (jBuf != NULL) delete[] jBuf;
+	if (rBuf != NULL) delete[] rBuf;
+}
+void INLJoin::getAttributes(vector<Attribute> &attrs) const {
+	attrs = jAttrs;
+}
+
+RC INLJoin::getNextTuple(void* data) {
+	if (this->reachEnd) return QE_EOF;
+	if (is->getNextTuple(rBuf) == -1) {	// indexScan reach End
+		is->setIterator(NULL, NULL, false, false);
+		if (lItr->getNextTuple(lBuf) == -1) {
+			this->reachEnd = true;
+			return QE_EOF;
+		}
+	}
+}
+
+bool INLJoin::increPair() {
+	if (is->getNextTuple(rBuf) == -1) {	// read next index into rBuf
+		// indexScan reach End
+		is->setIterator(NULL, NULL, false, false);
+		if (lItr->getNextTuple(lBuf) == -1) {	// read next itr into lBuf
+
+		}
+	} else {
+		// read successful
+		return true;
+	}
+}
+
