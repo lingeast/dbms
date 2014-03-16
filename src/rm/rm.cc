@@ -734,7 +734,7 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 	Attribute attr = this->getAttr(tableName, attributeName);
 	if (attr.name.empty()) // get attribute information failed
 		return -1;
-	cout << "find attr in the catalog: (" << attr.name<<"," << attr.length<<")";
+	//cout << "find attr in the catalog: (" << attr.name<<"," << attr.length<<")";
 
 	// Scan table to insert attribute into index file one by one
 	RM_ScanIterator RM_itr;
@@ -756,7 +756,7 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 	RID rid;
 	char buffer[attr.length];
 	int time1 = 0;
-	cout << "In create CreateIndex " << tableName << " , "<<attributeName<< endl;
+	//cout << "In create CreateIndex " << tableName << " , "<<attributeName<< endl;
 
 	while(RM_itr.getNextTuple(rid, buffer) != RM_EOF) {
 		im->insertEntry(idxFH, attr, buffer, rid);
@@ -764,7 +764,7 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 	}
 
 
-	cout << "After create CreateIndex" << endl;
+	//cout << "After create CreateIndex" << endl;
 	//TODO remove test code
 
 	/*
@@ -804,16 +804,16 @@ RC RelationManager::destroyIndex(const string &tableName, const string &attribut
 
 	 Attribute attr = this->getAttr(tableName, attributeName);
 	 if (attr.name.empty()) return -1;	// failed retrieve attribute type
-	 else cout << attr.name << "==" << attributeName << endl;
+	 //else cout << attr.name << "==" << attributeName << endl;
 
-	 cout << "=======In RM::indexScan, call IM::scan========" << endl;
+	 //cout << "=======In RM::indexScan, call IM::scan========" << endl;
 
 	 IX_ScanIterator* ix_scan_ptr = new IX_ScanIterator();
 	 int ret = IndexManager::instance()->scan(indexF, attr,
 			 lowKey, highKey, lowKeyInclusive, highKeyInclusive, *ix_scan_ptr);
 
 	 if (ret != 0) return -1;
-	 cout << "=======In RM::indexScan, call IM::scan END========" << endl;
+	 //cout << "=======In RM::indexScan, call IM::scan END========" << endl;
 
 	 /*
 	 char buffer[2000];

@@ -112,7 +112,7 @@ class TableScan : public Iterator
 
         ~TableScan()
         {
-        	cout << "Calling table Scan deconstructor" << endl;
+        	//cout << "Calling table Scan deconstructor" << endl;
         	iter->close();
         };
 };
@@ -289,6 +289,9 @@ private:
 	vector<Attribute> rAttrs;
 	vector<Attribute> jAttrs;
 	bool increPair();
+	bool checkCondition(void* lData, void* rData,
+			vector<Attribute>& lA, vector<Attribute>& rA,
+			const Condition& cond);
 public:
         INLJoin(Iterator *leftIn,                               // Iterator of input R
                 IndexScan *rightIn,                             // IndexScan Iterator of input S

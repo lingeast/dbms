@@ -1,5 +1,8 @@
 
 #include "qe.h"
+#include "../bpt/key/intkey.h"
+#include "../bpt/key/floatkey.h"
+#include "../bpt/key/varcharkey.h"
 
 bool compareData(void* data1,void* data2, CompOp op , AttrType type, int lengthl, int lengthr){
 	switch(op){
@@ -373,13 +376,17 @@ INLJoin::INLJoin(Iterator *leftIn,                               // Iterator of 
 	is->getAttributes(rAttrs);
 	this->jAttrs = lAttrs;
 	this->jAttrs.insert(jAttrs.end(), rAttrs.begin(), rAttrs.end());
-	cout << "jBuffer Size = " << RawDataUtil::recordMaxLen(jAttrs) << endl;
+	//cout << "jBuffer Size = " << RawDataUtil::recordMaxLen(jAttrs) << endl;
 	jBuf = new char[RawDataUtil::recordMaxLen(jAttrs)];
-	cout << "lBuffer Size = " << RawDataUtil::recordMaxLen(lAttrs) << endl;
+	//cout << "lBuffer Size = " << RawDataUtil::recordMaxLen(lAttrs) << endl;
 	lBuf = new char[RawDataUtil::recordMaxLen(lAttrs)];
-	cout << "lBuffer Size = " << RawDataUtil::recordMaxLen(rAttrs) << endl;
+	//cout << "lBuffer Size = " << RawDataUtil::recordMaxLen(rAttrs) << endl;
 	rBuf = new char[RawDataUtil::recordMaxLen(rAttrs)];
 	if (leftIn->getNextTuple(lBuf) == -1) {	// leftItr is completely empty
+		reachEnd = true;
+	}
+
+	if (is->getNextTuple(rBuf) == -1) {	// rightIndexScan is completely empty
 		reachEnd = true;
 	}
 }
@@ -394,25 +401,116 @@ void INLJoin::getAttributes(vector<Attribute> &attrs) const {
 
 RC INLJoin::getNextTuple(void* data) {
 	if (this->reachEnd) return QE_EOF;
-	if (is->getNextTuple(rBuf) == -1) {	// indexScan reach End
-		is->setIterator(NULL, NULL, false, false);
-		if (lItr->getNextTuple(lBuf) == -1) {
-			this->reachEnd = true;
-			return QE_EOF;
+	while(true) {
+		if (this->checkCondition(lBuf, rBuf, lAttrs, rAttrs, cond)) {
+			// do concatenation  write
+			char* cur = (char*) data;
+			int len = RawDataUtil::recordLen(lBuf, lAttrs);
+			memcpy(cur, lBuf, len);
+			cur += len;
+			len = RawDataUtil::recordLen(rBuf, rAttrs);
+			memcpy(cur, rBuf, len);
+
+			increPair(); //prepare for next read
+			return 0;
+		} else {
+			if (!increPair()) {
+				return QE_EOF;
+			}
 		}
 	}
+	assert(false); // should not reach here
+	return -1;
 }
 
 bool INLJoin::increPair() {
 	if (is->getNextTuple(rBuf) == -1) {	// read next index into rBuf
 		// indexScan reach End
-		is->setIterator(NULL, NULL, false, false);
 		if (lItr->getNextTuple(lBuf) == -1) {	// read next itr into lBuf
-
+			reachEnd = true;
+			return false;
+		} else { // read next itr successfully
+			is->setIterator(NULL, NULL, false, false);
+			if (is->getNextTuple(rBuf) == -1) {
+				assert(false); // should not happen because of reachEnd field protection
+				return false;
+			} else {
+				return true;
+			}
 		}
 	} else {
-		// read successful
+		// read next index successfully
 		return true;
+	}
+}
+
+int getAttrOff(const void* record, const vector<Attribute> attrs, const string& attrName) {
+	int len = 0;
+	char* data = (char*) record;
+
+	for (int i = 0; i < attrs.size(); i++) {
+		if(attrs[i].name == attrName) return len;
+		else {
+			switch(attrs[i].type) {
+			case TypeInt:
+				len += attrs[i].length; break;
+			case TypeReal:
+				len += attrs[i].length; break;
+			case TypeVarChar:
+				len += *(uint32_t*)(data + len) + sizeof(uint32_t);
+			}
+		}
+	}
+	return -1; //indicating match failure
+}
+
+bool INLJoin::checkCondition(void* lData, void* rData,
+		vector<Attribute>& lA, vector<Attribute>& rA,
+		const Condition& cond) {
+	// get corresponding field offset of lAttr
+	int offL = getAttrOff(lData, lA, cond.lhsAttr);
+	if (offL < 0) return false; // fail to find left field
+
+	//TODO remove test code
+	/*
+	bt_key* testk = new float_key();
+	testk->load((char*)rData + 4);
+	cout << "Index Scan: 1 = "<< testk->to_string() << endl;
+	*/
+
+	bt_key *lhs = NULL;
+	bt_key *rhs = NULL;
+	for (int i = 0; i < lA.size(); i++) {
+		if (cond.lhsAttr == lA[i].name) {
+			switch(lA[i].type) {
+			case TypeInt:
+				lhs = new int_key(); rhs = new int_key(); break;
+			case TypeReal:
+				lhs = new float_key(); rhs = new float_key(); break;
+			case TypeVarChar:
+				lhs = new varchar_key(); rhs = new varchar_key(); break;
+			}
+		}
+	}
+
+	lhs->load((char*)lData + offL);
+	if (cond.bRhsIsAttr) {
+		rhs->load(((char*)rData) + getAttrOff(rData, rA, cond.rhsAttr));
+		//cout << "Offset " << offL << "=" << getAttrOff(rData, rA, cond.rhsAttr);
+	} else {
+		rhs->load(cond.rhsValue.data);
+	}
+
+	//cout << "Compare "<<":"<< lhs->to_string() << ", " << rhs->to_string() << endl;
+	switch(cond.op) {
+	case EQ_OP: return (*lhs == *rhs);
+	case LT_OP: return (*lhs < *rhs);      // <
+	case GT_OP: return (*rhs < *lhs);      // >
+	case LE_OP: return (*lhs < *rhs || *lhs == *rhs);   // <=
+	case GE_OP: return (!(*lhs < *rhs));     // >=
+	case NE_OP: return !((*lhs == *rhs));      // !=
+	case NO_OP: return true;       // no condition
+	default: assert(false); return false;
 	}
 }
 

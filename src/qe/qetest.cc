@@ -1499,7 +1499,7 @@ int main() {
 		g_nUndergradPoint += 10;
 		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
-/*
+
 	if (testCase_7() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradExtraPoint += 3;
@@ -1557,6 +1557,7 @@ int main() {
 		g_nUndergradPoint += 3;
 	}
 
+/*
     // Extra Credit
 	// Aggregate
 	if (extraTestCase_1() == success) {
@@ -1587,8 +1588,8 @@ int main() {
 		g_nGradExtraPoint += 5;
 		g_nUndergradExtraPoint += 5;
     }
+*/
 
-**/
 	print_point: cout << "grad-point: " << g_nGradPoint
 			<< "\t grad-extra-point: " << g_nGradExtraPoint << endl;
 	cout << "undergrad-point: " << g_nUndergradPoint
