@@ -309,11 +309,17 @@ public:
 
 class Aggregate : public Iterator {
     // Aggregation operator
+private:
+	vector<Attribute> iAttrs;
+	Iterator* input;
+	Attribute attr;
+	AggregateOp op;
+	bool finished;
     public:
         Aggregate(Iterator *input,                              // Iterator of input R
                   Attribute aggAttr,                            // The attribute over which we are computing an aggregate
                   AggregateOp op                                // Aggregate operation
-        ){};
+        );
 
         // Extra Credit
         Aggregate(Iterator *input,                              // Iterator of input R
@@ -324,11 +330,11 @@ class Aggregate : public Iterator {
 
         ~Aggregate(){};
 
-        RC getNextTuple(void *data){return QE_EOF;};
+        RC getNextTuple(void *data);
         // Please name the output attribute as aggregateOp(aggAttr)
         // E.g. Relation=rel, attribute=attr, aggregateOp=MAX
         // output attrname = "MAX(rel.attr)"
-        void getAttributes(vector<Attribute> &attrs) const{};
+        void getAttributes(vector<Attribute> &attrs) const;
 };
 
 class RawDataUtil {
@@ -336,6 +342,7 @@ public:
 	static int fieldLen(void* data, const Attribute& attr);
 	static int recordLen(void* data, const vector<Attribute>& attrs);
 	static int recordMaxLen(const vector<Attribute>& attrs);
+	static int getAttrOff(const void* record, const vector<Attribute> attrs, const string& attrName);
 };
 
 #endif

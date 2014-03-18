@@ -1557,7 +1557,7 @@ int main() {
 		g_nUndergradPoint += 3;
 	}
 
-/*
+
     // Extra Credit
 	// Aggregate
 	if (extraTestCase_1() == success) {
@@ -1577,7 +1577,7 @@ int main() {
 	if (populateGroupTable() != success) {
 		goto print_point;
 	}
-
+/*
 	// Aggregate with GroupBy
     if (extraTestCase_3() == success) {
 		g_nGradExtraPoint += 5;

@@ -3,6 +3,10 @@
 #include "../bpt/key/intkey.h"
 #include "../bpt/key/floatkey.h"
 #include "../bpt/key/varcharkey.h"
+#include "aggregate.h"
+#include <cstring>
+#include <climits>
+#include <limits>
 
 bool compareData(void* data1,void* data2, CompOp op , AttrType type, int lengthl, int lengthr){
 	switch(op){
@@ -270,6 +274,26 @@ int RawDataUtil::recordMaxLen(const vector<Attribute>& attrs) {
 	}
 	return max_len;
 }
+
+int RawDataUtil::getAttrOff(const void* record, const vector<Attribute> attrs, const string& attrName) {
+	int len = 0;
+	char* data = (char*) record;
+
+	for (int i = 0; i < attrs.size(); i++) {
+		if(attrs[i].name == attrName) return len;
+		else {
+			switch(attrs[i].type) {
+			case TypeInt:
+				len += attrs[i].length; break;
+			case TypeReal:
+				len += attrs[i].length; break;
+			case TypeVarChar:
+				len += *(uint32_t*)(data + len) + sizeof(uint32_t);
+			}
+		}
+	}
+	return -1; //indicating match failure
+}
 NLJoin::NLJoin(Iterator *leftIn,                             // Iterator of input R
                TableScan *rightIn,                           // TableScan Iterator of input S
                const Condition &condition,                   // Join condition
@@ -443,7 +467,7 @@ bool INLJoin::increPair() {
 		return true;
 	}
 }
-
+/*
 int getAttrOff(const void* record, const vector<Attribute> attrs, const string& attrName) {
 	int len = 0;
 	char* data = (char*) record;
@@ -463,12 +487,13 @@ int getAttrOff(const void* record, const vector<Attribute> attrs, const string& 
 	}
 	return -1; //indicating match failure
 }
+*/
 
 bool INLJoin::checkCondition(void* lData, void* rData,
 		vector<Attribute>& lA, vector<Attribute>& rA,
 		const Condition& cond) {
 	// get corresponding field offset of lAttr
-	int offL = getAttrOff(lData, lA, cond.lhsAttr);
+	int offL = RawDataUtil::getAttrOff(lData, lA, cond.lhsAttr);
 	if (offL < 0) return false; // fail to find left field
 
 	//TODO remove test code
@@ -495,7 +520,7 @@ bool INLJoin::checkCondition(void* lData, void* rData,
 
 	lhs->load((char*)lData + offL);
 	if (cond.bRhsIsAttr) {
-		rhs->load(((char*)rData) + getAttrOff(rData, rA, cond.rhsAttr));
+		rhs->load(((char*)rData) + RawDataUtil::getAttrOff(rData, rA, cond.rhsAttr));
 		//cout << "Offset " << offL << "=" << getAttrOff(rData, rA, cond.rhsAttr);
 	} else {
 		rhs->load(cond.rhsValue.data);
@@ -512,5 +537,98 @@ bool INLJoin::checkCondition(void* lData, void* rData,
 	case NO_OP: return true;       // no condition
 	default: assert(false); return false;
 	}
+}
+
+Aggregate::Aggregate(Iterator* input, Attribute aggAttr, AggregateOp op):
+		input(input), attr(aggAttr), op(op), finished(false) {
+	input->getAttributes(iAttrs);
+}
+
+RC Aggregate::getNextTuple(void* data) {
+	if (finished) return QE_EOF;
+	// do aggregation and write back
+	char* buffer = new char[RawDataUtil::recordMaxLen(iAttrs)];
+	if (attr.type == TypeInt) {
+		float total;
+		int32_t one;
+		assert(sizeof(float) == attr.length);
+
+		int cnt = 0;
+		switch(this->op) {
+		case (MIN) : total = INT_MAX * 1.0 ; break;
+		case (MAX) : total = INT_MIN * 1.0 ; break;
+		default: total = 0; break;
+		}
+		while(input->getNextTuple(buffer) != QE_EOF) {
+			memcpy(&one,
+					buffer + RawDataUtil::getAttrOff(buffer, iAttrs, attr.name),
+					sizeof(one));
+			++cnt;
+			switch(this->op) {
+			case (MIN) : total = mintem(total, one); break;
+			case (MAX) : total = maxtem(total, one); break;
+			case (COUNT): break;
+			default: total = sumtem(total, one); break;
+			}
+		}
+
+		switch(op) {
+		case(COUNT): total = cnt; break;
+		case(AVG): total = total/ cnt; break;
+		default: break;
+		}
+		if (op == AVG) {
+			memcpy(data, &total, sizeof(total));
+		} else {
+			int32_t tmp = total;
+			memcpy(data, &tmp, sizeof(total));
+		}
+	} else if(attr.type == TypeReal) {
+		float total;
+		float one;
+		assert(sizeof(float) == attr.length);
+
+		int cnt = 0;
+		switch(this->op) {
+		case (MIN) : total = INT_MIN; break;
+		case (MAX) : total = INT_MAX; break;
+		default: total = 0; break;
+		}
+		while(input->getNextTuple(&one) != QE_EOF) {
+			memcpy(&one,
+					buffer + RawDataUtil::getAttrOff(buffer, iAttrs, attr.name),
+					sizeof(one));
+			++cnt;
+			switch(this->op) {
+			case (MIN) : total = mintem(total, one); break;
+			case (MAX) : total = maxtem(total, one); break;
+			case (COUNT): break;
+			default: total = sumtem(total, one); break;
+			}
+		}
+
+		switch(op) {
+		case(COUNT): total = cnt; break;
+		case(AVG): total = total/ cnt; break;
+		default: break;
+		}
+
+		if (op == COUNT) {
+			int32_t tmp = total;
+			memcpy(data, &tmp, sizeof(tmp));
+		} else {
+			memcpy(data, &total, sizeof(total));
+		}
+	} else {
+		assert(false);
+	}
+
+	// set finished flag
+	finished = true;
+	return 0;
+}
+
+void Aggregate::getAttributes(vector<Attribute> &attrs) const {
+	attrs = this->iAttrs;
 }
 
