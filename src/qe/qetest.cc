@@ -1488,6 +1488,7 @@ int main() {
 		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
+
 	if (testCase_5() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
@@ -1569,7 +1570,7 @@ int main() {
 		g_nGradExtraPoint += 2;
 		g_nUndergradExtraPoint += 2;
 	}
-
+/*
 	if (createGroupTable() != success) {
 		goto print_point;
 	}
@@ -1577,6 +1578,7 @@ int main() {
 	if (populateGroupTable() != success) {
 		goto print_point;
 	}
+	*/
 /*
 	// Aggregate with GroupBy
     if (extraTestCase_3() == success) {

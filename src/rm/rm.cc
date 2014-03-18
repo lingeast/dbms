@@ -763,7 +763,7 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 		//cout << "Insert " << ++time1 << ", Value = " << *(float*)buffer << endl;
 	}
 
-
+	im->closeFile(idxFH);
 	//cout << "After create CreateIndex" << endl;
 	//TODO remove test code
 

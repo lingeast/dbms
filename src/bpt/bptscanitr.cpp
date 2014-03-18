@@ -72,7 +72,7 @@ int bpt_scan_itr::get_next(RID& rid, void* key) {
 		return SCAN_EOF;
 	}
 	//std::cout << "In page " << cur_leaf.page_id() << " , offset = " << offset << std::endl;
-	while (offset >= cur_leaf.end_offset()) {
+	while ((unsigned)offset >= cur_leaf.end_offset()) {
 		if (cur_leaf.right_id() == 0) {
 			std::cout << "No right children. Exit" << std::endl;
 			return SCAN_EOF; // reach end of right most node
