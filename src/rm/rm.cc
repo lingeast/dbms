@@ -755,7 +755,6 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 
 	RID rid;
 	char buffer[attr.length];
-	int time1 = 0;
 	//cout << "In create CreateIndex " << tableName << " , "<<attributeName<< endl;
 
 	while(RM_itr.getNextTuple(rid, buffer) != RM_EOF) {
@@ -764,20 +763,6 @@ RC RelationManager::createIndex(const string& tableName, const string& attribute
 	}
 
 	im->closeFile(idxFH);
-	//cout << "After create CreateIndex" << endl;
-	//TODO remove test code
-
-	/*
-	IX_ScanIterator ix_itr;
-	im->scan(idxFH, attr, NULL, NULL, true, true, ix_itr);
-	int time = 0;
-	while(ix_itr.getNextEntry(rid, buffer) == 0) {
-		cout << "time:" << ++time << endl;
-	}
-	 */
-	//TODO test code end
-
-
 	return 0;
 }
 

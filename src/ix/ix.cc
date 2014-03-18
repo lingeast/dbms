@@ -60,7 +60,7 @@ RC IndexManager::openFile(const string &fileName, FileHandle &fileHandle)
 	if (ret.second){
 		return 0;
 	} else {
-		std::cout << "Why want to open same btree file more than once?" << std::endl;
+		//std::cout << "Why want to open same btree file more than once?" << std::endl;
 		return 0;
 	}
 	std::cout << "Never reach here" << std::endl;
