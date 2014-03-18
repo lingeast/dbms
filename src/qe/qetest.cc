@@ -448,10 +448,10 @@ int testCase_3() {
 
 	// Create Filter
 	Filter *filter = new Filter(ts, cond);
+
 	// Go over the data through iterator
 	void *data = malloc(bufSize);
 	while (filter->getNextTuple(data) != QE_EOF) {
-		cout<<"current"<<endl;
 		int offset = 0;
 		// Print left.A
 		cout << "left.A " << *(int *) ((char *) data + offset) << endl;
@@ -490,7 +490,7 @@ int testCase_4() {
 	RC rc = success;
 	// Functions Tested
 	// 1. Filter -- IndexScan as input, on TypeReal attribute
-	cout << "****In Test Case 4****" << endl;
+	cout << "****In Test Case 3****" << endl;
 
 	IndexScan *is = new IndexScan(*rm, "right", "C");
 	float compVal = 100.0;
@@ -574,7 +574,7 @@ int testCase_5() {
 		int offset = 0;
 
 		// Print right.C
-		cout << "right.C " << *(float *) ((char *) data + offset) << endl;
+		cout << "left.C " << *(float *) ((char *) data + offset) << endl;
 		offset += sizeof(float);
 
 		// Print right.D
@@ -590,7 +590,6 @@ int testCase_5() {
 		++actualResultCnt;
 	}
 
-	cout << "Expected: " << expectedResultCnt << "Actual: " << actualResultCnt << endl;
 	if (expectedResultCnt != actualResultCnt) {
 		rc = fail;
 	}
@@ -1460,8 +1459,6 @@ int main() {
 	g_nGradPoint += 5;
 	g_nUndergradPoint += 5;
 
-	cout << "Passed: points = " << g_nGradPoint << endl;
-
 	// Create the right table
 	if (createRightTable() != success) {
 		goto print_point;
@@ -1473,62 +1470,49 @@ int main() {
 	g_nGradPoint += 5;
 	g_nUndergradPoint += 5;
 
-	cout << "Passed: points = " << g_nGradPoint << endl;
-
 	if (testCase_3() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradPoint += 5;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
-
 
 	if (testCase_4() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradPoint += 5;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
-
 
 	if (testCase_5() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_6() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradPoint += 10;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_7() == success) {
 		g_nGradPoint += 5;
 		g_nUndergradExtraPoint += 3;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_8() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_9_Grad() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradExtraPoint += 2;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_9_Undergrad() == success) {
 		g_nGradPoint += 2;
 		g_nUndergradPoint += 5;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	if (testCase_10() == success) {
 		g_nGradPoint += 3;
 		g_nUndergradPoint += 3;
-		cout << "Passed: points = " << g_nGradPoint << endl;
 	}
 
 	// Create left/right large table, and populate the table
@@ -1558,7 +1542,6 @@ int main() {
 		g_nUndergradPoint += 3;
 	}
 
-
     // Extra Credit
 	// Aggregate
 	if (extraTestCase_1() == success) {
@@ -1570,7 +1553,7 @@ int main() {
 		g_nGradExtraPoint += 2;
 		g_nUndergradExtraPoint += 2;
 	}
-/*
+
 	if (createGroupTable() != success) {
 		goto print_point;
 	}
@@ -1578,8 +1561,7 @@ int main() {
 	if (populateGroupTable() != success) {
 		goto print_point;
 	}
-	*/
-/*
+
 	// Aggregate with GroupBy
     if (extraTestCase_3() == success) {
 		g_nGradExtraPoint += 5;
@@ -1590,7 +1572,7 @@ int main() {
 		g_nGradExtraPoint += 5;
 		g_nUndergradExtraPoint += 5;
     }
-*/
+
 
 	print_point: cout << "grad-point: " << g_nGradPoint
 			<< "\t grad-extra-point: " << g_nGradExtraPoint << endl;
