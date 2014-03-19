@@ -97,7 +97,7 @@ int bp_tree::insert_entry(bt_key *key, RID rid) {
 		fhelp->write_page(0, dir.page_block());
 	}
 
-	cout << "Root = " << dir.root() << endl;
+	//cout << "Root = " << dir.root() << endl;
 	page_node root(dir.root());
 	fhelp->read_page(root.page_id(), root.page_block());
 	key = insert_to_page(root, key, rid);
@@ -116,7 +116,7 @@ int bp_tree::insert_entry(bt_key *key, RID rid) {
 		}
 		*/
 		assert(splitpage != 0);
-		cout << "Split at root, SplitPage = " << splitpage << endl;
+		//cout << "Split at root, SplitPage = " << splitpage << endl;
 
 		page_node newroot(Index, splitpage, 0, 0);
 		dir.update_root(newroot.page_id());
