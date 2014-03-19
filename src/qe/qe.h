@@ -326,7 +326,7 @@ private:
                   Attribute aggAttr,                            // The attribute over which we are computing an aggregate
                   Attribute gAttr,                              // The attribute over which we are grouping the tuples
                   AggregateOp op                                // Aggregate operation
-        ){};
+        ){this->finished = true;}
 
         ~Aggregate(){};
 

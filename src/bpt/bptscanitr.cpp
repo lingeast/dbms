@@ -26,12 +26,12 @@ bpt_scan_itr::bpt_scan_itr(std::string fname, bt_key* lok, bt_key* hik, bool lo_
 		return;
 	}
 	cur_leaf.set_id(dir.root()); // read in root page
-	fhelp.read_page(dir[cur_leaf.page_id()], cur_leaf.page_block());
+	fhelp.read_page(cur_leaf.page_id(), cur_leaf.page_block());
 
 	while(!cur_leaf.is_leaf_node()) { //keep moving until reach leaf node
 		int entry = cur_leaf.findEntry(lok, key_itr);
 		cur_leaf.set_id(entry);
-		fhelp.read_page(dir[cur_leaf.page_id()], cur_leaf.page_block());
+		fhelp.read_page(cur_leaf.page_id(), cur_leaf.page_block());
 	}
 
 	this->offset = this->begin_offset(cur_leaf, lok, lo_inc); // set up offset
@@ -79,7 +79,7 @@ int bpt_scan_itr::get_next(RID& rid, void* key) {
 		}
 		else { // read next leaf node to cur_leaf, reset offset
 			cur_leaf.set_id(cur_leaf.right_id());
-			fhelp.read_page(dir[cur_leaf.page_id()], cur_leaf.page_block());
+			fhelp.read_page(cur_leaf.page_id(), cur_leaf.page_block());
 			offset = 0;
 		}
 	}

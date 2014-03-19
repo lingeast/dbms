@@ -191,14 +191,18 @@ p_offset& dir_page::operator [](int slot) const {
 }
 
 int dir_page::find_empty() const {
-	for (int slot = 0; slot < PAGE_SIZE / sizeof(p_offset); slot++) {
-		if (operator[](slot) == 0) {
-			return slot;
-		}
-	}
-	throw new std::logic_error("Dir not large enough");
+	//New Approach for non-shrinking
+	++(operator[](1));
+	cout << "Page Numbers changed to " << operator[](1);
+	return operator[](1);
+	//for (int slot = 0; slot < PAGE_SIZE / sizeof(p_offset); slot++) {
+		//if (operator[](slot) == 0) {
+			//return slot;
+		//}
+	//}
+	//throw new std::logic_error("Dir not large enough");
 	// Never reach here
-	return -1;
+	//return -1;
 }
 
 }

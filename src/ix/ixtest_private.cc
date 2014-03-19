@@ -805,6 +805,10 @@ int testCase_p4(const string &indexFileName1, const Attribute &attribute1, const
     // insert entry
     for(i = 1; i <= numOfTuples; i++)
     {
+    	cout << "Inserting " << i << "th " << "tuple" << endl;
+    	if (i == 4999) {
+    		int k = 6;
+    	}
     	sprintf(key + 4, "%04d", i);
         rid.pageNum = i;
         rid.slotNum = i;
@@ -1009,6 +1013,7 @@ void test()
 
 	testCase_p3(indexEmpNameFileName1, attrShortEmpName);
 	print_point();
+
 	testCase_p4(indexEmpNameFileName1, attrShortEmpName, indexEmpNameFileName2, attrLongEmpName);
 	print_point();
 

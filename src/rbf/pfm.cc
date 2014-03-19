@@ -3,7 +3,8 @@
 #include <cassert>
 #include <cstring>
 #include <cstdlib>
-
+#include <stdint.h>
+#include <cstdio>
 PageDirHandle::PageDirHandle() {
 	PageDirHandle(0);
 }
@@ -327,6 +328,7 @@ RC PagedFileManager::destroyFile(const char *fileName)
 
 	std::map<string, fileInfo>::iterator it = fileMap.find(string(fileName));
 	if (it != fileMap.end()) {	// Destroy an opened file
+		std::cout << "Destroy an opened file!" << std::endl;
 		return -1;
 	}
 	return remove(fileName);
@@ -367,7 +369,6 @@ RC PagedFileManager::openFile(const char *fileName, FileHandle &fileHandle)
 
 RC PagedFileManager::closeFile(FileHandle &fileHandle)
 {
-	if (fileHandle.getFile() == NULL) return -1;
 	string fileNo(fileHandle.getFileName());
 	//std::cout << "Want to close " << fileHandle.getFileName() << std::endl;
 
@@ -378,6 +379,10 @@ RC PagedFileManager::closeFile(FileHandle &fileHandle)
 		return -1;
 	} else {
 		if (--it->second.count == 0) {	// No fileHandle is using this stream
+			if (it->second.stream == NULL) {
+				// it's has already been closed
+				return 0;
+			}
 			ret = fclose(it->second.stream);
 			fileMap.erase(it);
 			//std::cout << "Reduce file ptr to " << fileMap.size() << std::endl;
@@ -592,6 +597,17 @@ RC FileHandle::appendPage(const void *data)
 
 unsigned FileHandle::getNumberOfPages()
 {
+	if (this->file == NULL) {
+		// index file!
+		FILE* f = fopen(this->fileName.c_str(), "r + b");
+		//BPlusTree::dir_page dir;
+		char block[PAGE_SIZE];
+		this->setFile(f);
+		this->readPageBlock(0, block);
+		fclose(f);
+		this->setFile(NULL);
+		return *(uint16_t*)(block + sizeof(uint16_t));
+	}
 	PageDirHandle pdh(INIT_DIR_OFFSET, file);
 	int num = 0;
 	while(true) {
