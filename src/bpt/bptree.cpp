@@ -131,9 +131,9 @@ int bp_tree::insert_entry(bt_key *key, RID rid) {
 		newroot.end_offset() = key->length() + 2 * sizeof(int16_t);
 		fhelp->write_page(newroot.page_id(), newroot.page_block());
 	} else {
-		cout << "No Update in root" << endl;
+		//cout << "No Update in root" << endl;
 	}
-	cout << "Insert succesfully" << endl;
+	//cout << "Insert succesfully" << endl;
 	return 0;
 	//insert_to_page
 }
@@ -145,10 +145,10 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 			return NULL;
 		}
 		if (key->length() + sizeof(rid) <= PAGE_SIZE - pg.end_offset() - sizeof(int16_t) * 4){
-			cout << "Enough Room in Leaf" << endl;
+			//cout << "Enough Room in Leaf" << endl;
 			pg.insert(key,rid,key_itr);
 
-			cout << "Write to page" << pg.page_id() << endl;
+			//cout << "Write to page" << pg.page_id() << endl;
 			fhelp -> write_page(pg.page_id(),pg.page_block());
 			return NULL;
 		}else{
@@ -166,8 +166,8 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 			}
 			dir[splitpage] = splitpage;
 			*/
-			cout << "Not Enough Room in Leaf" << endl;
-			cout << "SplitPage = " << splitpage << endl;
+			//cout << "Not Enough Room in Leaf" << endl;
+			//cout << "SplitPage = " << splitpage << endl;
 			page_node splitpg(Leaf, splitpage, pg.page_id(), pg.right_id());
 			pg.right_id() = splitpage;
 			int flag = 1,splitpos = 0;
@@ -206,14 +206,14 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 		key = insert_to_page(child_pg,key,rid);
 		if (key != NULL){
 			if(key->length() + sizeof(int16_t) <= PAGE_SIZE - pg.end_offset() - sizeof(int16_t) * 4){
-				cout << "Enough Room in Index" << endl;
+				//cout << "Enough Room in Index" << endl;
 				rid.pageNum = child_pg.right_id();
 				pg.insert(key,rid,key_itr);
 				fhelp -> write_page(pg.page_id(), pg.page_block());
 				return NULL;
 			}
 			else{
-				cout << "Not Enough Room in Index" << endl;
+				//cout << "Not Enough Room in Index" << endl;
 				uint16_t splitpage = dir.find_empty();
 				/*
 				for (uint16_t i=1;i<PAGE_SIZE/sizeof(uint16_t);i++){
@@ -225,7 +225,7 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 
 				dir[splitpage] = splitpage;
 				*/
-				cout << "SplitPage = " << splitpage << endl;
+				//cout << "SplitPage = " << splitpage << endl;
 				page_node splitpg(Index,splitpage,pg.page_id(),pg.right_id());
 				pg.right_id() = splitpage;
 				int flag = 1,splitpos = 0;
@@ -285,7 +285,7 @@ bt_key* bp_tree::insert_to_page(page_node& pg, bt_key* key, RID rid) {
 				fhelp ->write_page(splitpg.page_id(),splitpg.page_block());
 			}
 		} else {
-			cout << "Index ("<< pg.page_id() << ") does not get new push-up key" << endl;
+			//cout << "Index ("<< pg.page_id() << ") does not get new push-up key" << endl;
 			return NULL;
 		}
 		// find next page, read it out

@@ -45,7 +45,7 @@ RC IndexManager::destroyFile(const string &fileName)
 		std::cout << "The fileHandle has not been closed yet" << std::endl;
 		return -1;
 	} else {
-		cout << "Try Destroy file " << fileName << endl;
+		//cout << "Try Destroy file " << fileName << endl;
 		return PagedFileManager::instance()->destroyFile(fileName.c_str());
 	}
 }
@@ -105,11 +105,11 @@ RC IndexManager::insertEntry(FileHandle &fileHandle, const Attribute &attribute,
 	}
 	insert_key->load(key);
 
-	cout << "Insert " << insert_key->to_string() << "(" << insert_key->length() << ")"<< " to " << bpt->first << endl;
+	//cout << "Insert " << insert_key->to_string() << "(" << insert_key->length() << ")"<< " to " << bpt->first << endl;
 	RC ret = bpt->second.insert_entry(insert_key, rid);
 
 	if (insert_key != NULL) delete insert_key;
-	cout << "Ret value = " << ret << endl;
+	//cout << "Ret value = " << ret << endl;
 	return ret;
 }
 
